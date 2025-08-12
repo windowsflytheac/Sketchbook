@@ -2,38 +2,37 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Sketchbook Source + Portal Gun + Photon</title>
+  <title>Sketchbook Multiplayer + Portal Gun + Source Console</title>
   <style>
-    body { margin: 0; overflow: hidden; background: #111; color: #eee; font-family: monospace; }
+    body {
+      margin: 0; overflow: hidden; background: #111; color: #0f0; font-family: monospace;
+    }
     #console {
       position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
+      bottom: 0; left: 0; right: 0;
       max-height: 40%;
       background: rgba(0,0,0,0.85);
-      color: #0f0;
-      font-size: 14px;
-      font-family: monospace;
-      overflow-y: auto;
-      padding: 10px;
       display: none;
       flex-direction: column;
-      z-index: 9999;
+      padding: 10px;
+      overflow-y: auto;
+      z-index: 10000;
     }
     #console-output {
       flex-grow: 1;
       overflow-y: auto;
       white-space: pre-wrap;
+      font-size: 14px;
+      line-height: 1.2em;
       margin-bottom: 5px;
     }
     #console-input {
-      border: none;
-      outline: none;
-      background: black;
-      color: #0f0;
       font-family: monospace;
       font-size: 14px;
+      border: none;
+      background: black;
+      color: #0f0;
+      outline: none;
       padding: 5px;
       width: 100%;
       box-sizing: border-box;
@@ -48,16 +47,17 @@
   <script src="https://cdn.jsdelivr.net/npm/photon-sdk@4.1.1/Photon-Javascript_SDK.min.js"></script>
 </head>
 <body>
-  <div id="console">
+  <div id="console" style="display: none; flex-direction: column;">
     <div id="console-output"></div>
-    <input id="console-input" type="text" autocomplete="off" placeholder="Enter command..." />
+    <input id="console-input" autocomplete="off" spellcheck="false" placeholder="Enter command..." />
   </div>
 
   <script>
+    // Photon setup
     const photonAppId = "0e7ba88d-a481-481c-a32b-2e0dabaa8d7e";
     const photonClient = new Photon.LoadBalancing.LoadBalancingClient(photonAppId, "us");
 
-    // Console DOM elements
+    // Console elements
     const consoleEl = document.getElementById('console');
     const consoleOutput = document.getElementById('console-output');
     const consoleInput = document.getElementById('console-input');
@@ -66,32 +66,30 @@
     let cheatsLevel = 0;
     let weaponGroup = null;
 
-    // Logging helper
     function logToConsole(msg) {
       consoleOutput.textContent += msg + '\n';
       consoleOutput.scrollTop = consoleOutput.scrollHeight;
+      console.log(msg);
     }
 
-    // Toggle console visibility
     function toggleConsole() {
       consoleActive = !consoleActive;
       consoleEl.style.display = consoleActive ? 'flex' : 'none';
       if (consoleActive) consoleInput.focus();
     }
 
-    // Handle console commands
     function handleCommand(cmd) {
       const args = cmd.trim().split(/\s+/);
       const command = args[0].toLowerCase();
 
-      switch(command) {
+      switch (command) {
         case 'sv_cheats':
           if (args.length < 2) {
             logToConsole('Usage: sv_cheats [0|1|2]');
-            return;
+            break;
           }
           const level = parseInt(args[1], 10);
-          if ([0,1,2].includes(level)) {
+          if ([0, 1, 2].includes(level)) {
             cheatsLevel = level;
             logToConsole(`sv_cheats set to ${level}`);
           } else {
@@ -102,7 +100,7 @@
         case 'toggleportalgun':
           if (weaponGroup) {
             weaponGroup.visible = !weaponGroup.visible;
-            logToConsole('Portal gun ' + (weaponGroup.visible ? 'enabled' : 'disabled'));
+            logToConsole(`Portal gun ${weaponGroup.visible ? 'enabled' : 'disabled'}`);
           }
           break;
 
@@ -111,7 +109,7 @@
             logToConsole('noclip requires sv_cheats 1 or higher');
           } else {
             logToConsole('Noclip toggled (stub)');
-            // Implement noclip here
+            // implement noclip here
           }
           break;
 
@@ -120,37 +118,47 @@
             logToConsole('Usage: join [roomname]');
             break;
           }
-          const joinRoomName = args[1];
-          photonClient.joinRoom(joinRoomName).then(() => {
-            logToConsole(`Joining room ${joinRoomName}...`);
-          }).catch((e) => {
-            logToConsole(`Failed to join room ${joinRoomName}: ${e.message || e}`);
+          if (!photonClient.isInLobby()) {
+            logToConsole('Must be in lobby to join a room.');
+            break;
+          }
+          photonClient.joinRoom(args[1]).then(() => {
+            logToConsole(`Joining room ${args[1]}...`);
+          }).catch(e => {
+            logToConsole(`Failed to join room: ${e.message || e}`);
           });
           break;
 
         case 'leave':
+          if (!photonClient.isInRoom) {
+            logToConsole('Not currently in a room.');
+            break;
+          }
           photonClient.leaveRoom().then(() => {
             logToConsole('Left room.');
-          }).catch((e) => {
+          }).catch(e => {
             logToConsole(`Failed to leave room: ${e.message || e}`);
           });
           break;
 
         case 'host':
           if (args.length < 2) {
-            logToConsole('Usage: host [servername]');
+            logToConsole('Usage: host [roomname]');
             break;
           }
-          const hostRoomName = args[1];
-          photonClient.createRoom(hostRoomName).then(() => {
-            logToConsole(`Hosting room ${hostRoomName}...`);
-          }).catch((e) => {
-            logToConsole(`Failed to host room ${hostRoomName}: ${e.message || e}`);
+          if (!photonClient.isInLobby()) {
+            logToConsole('Must be in lobby to host a room.');
+            break;
+          }
+          photonClient.createRoom(args[1], { maxPlayers: 8 }).then(() => {
+            logToConsole(`Hosting room ${args[1]}...`);
+          }).catch(e => {
+            logToConsole(`Failed to host room: ${e.message || e}`);
           });
           break;
 
         case 'help':
-          logToConsole('Available commands: sv_cheats, toggleportalgun, noclip, join [room], leave, host [room], help');
+          logToConsole('Commands: sv_cheats, toggleportalgun, noclip, join [room], leave, host [room], help');
           break;
 
         default:
@@ -158,23 +166,27 @@
       }
     }
 
-    // Keyboard input handling
-    window.addEventListener('keydown', (e) => {
-      if (e.key === '`' || e.key === '~') {
-        toggleConsole();
-        e.preventDefault();
-      } else if (consoleActive && e.key === 'Enter') {
+    consoleInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
         const cmd = consoleInput.value;
         consoleInput.value = '';
         logToConsole('> ' + cmd);
         handleCommand(cmd);
+        e.preventDefault();
+      }
+    });
+
+    // Toggle console with ~ and `
+    window.addEventListener('keydown', (e) => {
+      if (e.key === '`' || e.key === '~') {
+        toggleConsole();
         e.preventDefault();
       } else if (!consoleActive && e.key.toLowerCase() === 'c') {
         if (weaponGroup) weaponGroup.visible = !weaponGroup.visible;
       }
     });
 
-    // Initialize Sketchbook world
+    // Sketchbook world setup
     const world = new Sketchbook.World('build/assets/world.glb');
 
     world.ready.then(() => {
@@ -197,7 +209,16 @@
 
     photonClient.onStateChange = (state) => {
       logToConsole(`Photon State: ${Photon.LoadBalancing.ConnectionStateToName(state)}`);
-      console.log('Photon state:', Photon.LoadBalancing.ConnectionStateToName(state));
+
+      if (state === Photon.LoadBalancing.ConnectionState.ConnectedToMaster) {
+        photonClient.joinLobby();
+      }
+      if (state === Photon.LoadBalancing.ConnectionState.JoinedLobby) {
+        logToConsole('Joined lobby, ready for commands.');
+      }
+      if (state === Photon.LoadBalancing.ConnectionState.JoinedRoom) {
+        logToConsole(`Joined room: ${photonClient.myRoomName}`);
+      }
     };
 
     photonClient.connect();
