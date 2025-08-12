@@ -1,45 +1,178 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Sketchbook Portal Gun</title>
+  <meta charset="UTF-8" />
+  <title>Sketchbook Source + Portal Gun + Photon</title>
   <style>
-    body { margin: 0; overflow: hidden; }
+    body { margin: 0; overflow: hidden; background: #111; color: #eee; font-family: monospace; }
+    #console {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      max-height: 40%;
+      background: rgba(0,0,0,0.85);
+      color: #0f0;
+      font-size: 14px;
+      font-family: monospace;
+      overflow-y: auto;
+      padding: 10px;
+      display: none;
+      flex-direction: column;
+      z-index: 9999;
+    }
+    #console-output {
+      flex-grow: 1;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      margin-bottom: 5px;
+    }
+    #console-input {
+      border: none;
+      outline: none;
+      background: black;
+      color: #0f0;
+      font-family: monospace;
+      font-size: 14px;
+      padding: 5px;
+      width: 100%;
+      box-sizing: border-box;
+    }
   </style>
+
+  <script src="https://cdn.jsdelivr.net/npm/three@0.153.0/build/three.min.js"></script>
+  <script src="https://unpkg.com/three@0.153.0/examples/js/loaders/GLTFLoader.js"></script>
+  <script src="build/sketchbook.min.js"></script>
+
+  <!-- Photon SDK CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/photon-sdk@4.1.1/Photon-Javascript_SDK.min.js"></script>
 </head>
 <body>
-  <script src="build/sketchbook.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.153.0/build/three.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.153.0/examples/js/loaders/GLTFLoader.js"></script>
+  <div id="console">
+    <div id="console-output"></div>
+    <input id="console-input" type="text" autocomplete="off" placeholder="Enter command..." />
+  </div>
 
   <script>
+    // Initialize Sketchbook world
     const world = new Sketchbook.World('build/assets/world.glb');
+
+    // Globals
+    let weaponGroup, portalGun;
+    let cheatsLevel = 0; // sv_cheats level
+
+    // Console elements
+    const consoleEl = document.getElementById('console');
+    const consoleOutput = document.getElementById('console-output');
+    const consoleInput = document.getElementById('console-input');
+    let consoleActive = false;
+
+    function logToConsole(msg) {
+      consoleOutput.textContent += msg + '\n';
+      consoleOutput.scrollTop = consoleOutput.scrollHeight;
+    }
+
+    // Show / hide console
+    function toggleConsole() {
+      consoleActive = !consoleActive;
+      consoleEl.style.display = consoleActive ? 'flex' : 'none';
+      if (consoleActive) consoleInput.focus();
+    }
+
+    // Basic command parser
+    function handleCommand(cmd) {
+      const args = cmd.trim().split(/\s+/);
+      const command = args[0].toLowerCase();
+
+      if (command === 'sv_cheats') {
+        if (args.length < 2) {
+          logToConsole('Usage: sv_cheats [0|1|2]');
+          return;
+        }
+        const level = parseInt(args[1], 10);
+        if ([0,1,2].includes(level)) {
+          cheatsLevel = level;
+          logToConsole(`sv_cheats set to ${level}`);
+        } else {
+          logToConsole('Invalid sv_cheats level. Use 0, 1, or 2.');
+        }
+      }
+      else if (command === 'help') {
+        logToConsole('Available commands: sv_cheats, help, toggleportalgun, noclip');
+      }
+      else if (command === 'toggleportalgun') {
+        if (weaponGroup) {
+          weaponGroup.visible = !weaponGroup.visible;
+          logToConsole('Portal gun ' + (weaponGroup.visible ? 'enabled' : 'disabled'));
+        }
+      }
+      else if (command === 'noclip') {
+        if (cheatsLevel < 1) {
+          logToConsole('noclip requires sv_cheats 1 or higher');
+        } else {
+          logToConsole('Noclip toggled (stub)');
+          // Implement noclip here
+        }
+      }
+      else {
+        logToConsole(`Unknown command: ${command}`);
+      }
+    }
+
+    // Keyboard event listener
+    window.addEventListener('keydown', (e) => {
+      if (e.key === '`') {
+        toggleConsole();
+        e.preventDefault();
+      } else if (consoleActive && e.key === 'Enter') {
+        const cmd = consoleInput.value;
+        consoleInput.value = '';
+        logToConsole('> ' + cmd);
+        handleCommand(cmd);
+        e.preventDefault();
+      } else if (!consoleActive && e.key.toLowerCase() === 'c') {
+        if (weaponGroup) weaponGroup.visible = !weaponGroup.visible;
+      }
+    });
 
     world.ready.then(() => {
       const scene = world.scene;
       const camera = world.camera;
 
-      // Create weapon group attached to camera
-      const weaponGroup = new THREE.Group();
+      weaponGroup = new THREE.Group();
       camera.add(weaponGroup);
       scene.add(camera);
-
       weaponGroup.position.set(0.5, -0.7, -1);
-      weaponGroup.rotation.set(0, 0, 0);
-      weaponGroup.visible = false; // hidden initially
+      weaponGroup.visible = false;
 
       const loader = new THREE.GLTFLoader();
       loader.load('build/assets/models/mel_portal_gun.glb', (gltf) => {
-        const portalGun = gltf.scene;
+        portalGun = gltf.scene;
         portalGun.scale.set(1.5, 1.5, 1.5);
         weaponGroup.add(portalGun);
       });
 
-      // Toggle portal gun visibility on 'C' key
-      window.addEventListener('keydown', (e) => {
-        if (e.key.toLowerCase() === 'c') {
-          weaponGroup.visible = !weaponGroup.visible;
+      // Photon Multiplayer Basic Setup
+      // You'll want to replace 'your-photon-app-id' with your real Photon App ID!
+      const photonClient = new Photon.LoadBalancing.LoadBalancingClient("0e7ba88d-a481-481c-a32b-2e0dabaa8d7e", "us");
+
+      photonClient.onStateChange = (state) => {
+        console.log("Photon State:", state);
+        logToConsole(`Photon state: ${Photon.LoadBalancing.ConnectionStateToName(state)}`);
+
+        if (state === Photon.LoadBalancing.ConnectionState.JoinedLobby) {
+          photonClient.joinRandomRoom();
         }
-      });
+        else if (state === Photon.LoadBalancing.ConnectionState.JoinedRoom) {
+          logToConsole(`Joined room: ${photonClient.myRoomName}`);
+          // You can start syncing player positions here
+        }
+        else if (state === Photon.LoadBalancing.ConnectionState.Disconnected) {
+          logToConsole("Disconnected from Photon");
+        }
+      };
+
+      photonClient.connect();
     });
   </script>
 </body>
