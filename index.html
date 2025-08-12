@@ -87,45 +87,43 @@
     width: 100%;
     box-sizing: border-box;
   }
+  /* Lobby UI */
   #lobbyOverlay {
-    display:none;
     position: fixed;
-    top: 20vh; left: 50%;
-    transform: translateX(-50%);
-    background: #222;
+    top: 20vh; left: 50%; transform: translateX(-50%);
+    background: #111;
     border: 2px solid #f1a20f;
-    padding: 1rem 2rem;
     border-radius: 8px;
-    z-index: 13000;
+    padding: 1rem 2rem;
     color: #f1a20f;
-    font-family: monospace;
+    z-index: 9500;
+    display: none;
+    width: 300px;
+    text-align: center;
   }
-  #lobbyOverlay input {
-    background:#333;
-    border:none;
-    color:#f1a20f;
-    padding:0.5rem;
-    width:200px;
-    border-radius:4px;
+  #lobbyOverlay input, #lobbyOverlay button {
+    margin: 0.5rem 0;
+    padding: 0.5rem;
+    font-family: monospace;
+    font-size: 1rem;
+    border-radius: 4px;
+    border: 1px solid #f1a20f;
+    background: #222;
+    color: #f1a20f;
   }
   #lobbyOverlay button {
-    margin-left:0.5rem;
-    background:none;
-    border:2px solid #f1a20f;
-    color:#f1a20f;
-    padding:0.5rem 1rem;
-    cursor:pointer;
-    border-radius:4px;
+    cursor: pointer;
+    border: 2px solid #f1a20f;
   }
-  #lobbyStatus {
-    margin-top:0.75rem;
-    font-size:0.9rem;
+  #lobbyOverlay button:hover {
+    background: #f1a20f;
+    color: #000;
   }
 </style>
 
 <script src="https://cdn.jsdelivr.net/npm/three@0.153.0/build/three.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.153.0/examples/js/loaders/GLTFLoader.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/photon-javascript-sdk@5.1.0/build/photon.min.js"></script>
+<!-- Removed deprecated GLTFLoader script and will load from module inside sketchbook.min.js -->
+<script src="https://unpkg.com/photon-javascript-sdk/build/photon.min.js"></script>
 <script src="build/sketchbook.min.js"></script>
 
 </head>
@@ -143,14 +141,15 @@
 <div id="menuOverlay">
   <button id="startGameBtn">Start Game</button>
   <button id="loadSaveBtn">Load Save</button>
+  <button id="showLobbyBtn">Multiplayer Lobby</button>
 </div>
 
-<!-- Lobby UI -->
 <div id="lobbyOverlay">
-  <div>Photon Lobby</div>
-  <input id="roomInput" type="text" placeholder="Room Name" />
-  <button id="joinRoomBtn">Join/Create</button>
-  <div id="lobbyStatus"></div>
+  <h2>Multiplayer Lobby</h2>
+  <input id="roomInput" type="text" placeholder="Room name" />
+  <button id="joinRoomBtn">Join Room</button>
+  <button id="closeLobbyBtn">Close</button>
+  <div id="lobbyStatus" style="margin-top:10px; font-size:0.9rem; min-height: 1.5em;"></div>
 </div>
 
 <div id="console">
@@ -161,27 +160,24 @@
 <script>
   let weaponGroup = null;
   let consoleActive = false;
+  let world = null;
+  let photonClient = null;
 
   const valveIntro = document.getElementById('valveIntro');
   const valveIntroAudio = document.getElementById('valveIntroAudio');
   const soundOverlay = document.getElementById('enableSoundOverlay');
   const menuOverlay = document.getElementById('menuOverlay');
-  const lobbyOverlay = document.getElementById('lobbyOverlay');
-  const roomInput = document.getElementById('roomInput');
-  const joinRoomBtn = document.getElementById('joinRoomBtn');
-  const lobbyStatus = document.getElementById('lobbyStatus');
   const consoleEl = document.getElementById('console');
   const consoleOutput = document.getElementById('console-output');
   const consoleInput = document.getElementById('console-input');
+  const lobbyOverlay = document.getElementById('lobbyOverlay');
+  const showLobbyBtn = document.getElementById('showLobbyBtn');
+  const closeLobbyBtn = document.getElementById('closeLobbyBtn');
+  const joinRoomBtn = document.getElementById('joinRoomBtn');
+  const roomInput = document.getElementById('roomInput');
+  const lobbyStatus = document.getElementById('lobbyStatus');
 
-  // Photon Config
-  const APP_ID = "0e7ba88d-a481-481c-a32b-2e0dabaa8d7e"; // <<< REPLACE WITH YOUR APP ID
-  const REGION = "us";
-
-  let photonClient = null;
-  let currentRoomName = null;
-
-  // Sound enable click
+  // Enable audio on user click (required for autoplay sound)
   soundOverlay.addEventListener('click', () => {
     valveIntro.muted = false;
     valveIntro.play();
@@ -189,6 +185,7 @@
     soundOverlay.style.display = 'none';
   });
 
+  // Valve intro video ended - remove video and show menu
   valveIntro.onended = () => {
     valveIntro.style.transition = 'opacity 1s ease';
     valveIntro.style.opacity = '0';
@@ -196,59 +193,11 @@
     menuOverlay.style.display = 'block';
   };
 
-  // Start Game button shows lobby UI
+  // Start Game
   document.getElementById('startGameBtn').onclick = () => {
     menuOverlay.style.display = 'none';
-    lobbyOverlay.style.display = 'block';
-  };
 
-  // Join/Create room logic
-  joinRoomBtn.onclick = () => {
-    const roomName = roomInput.value.trim();
-    if (!roomName) {
-      lobbyStatus.textContent = 'Please enter a room name.';
-      return;
-    }
-    currentRoomName = roomName;
-    lobbyStatus.textContent = `Connecting to room: ${roomName}...`;
-
-    photonClient = new Photon.LoadBalancing.LoadBalancingClient(REGION, APP_ID);
-
-    photonClient.onStateChange = (state) => {
-      console.log("Photon State:", state);
-      if (state === Photon.LoadBalancing.ClientState.Joined) {
-        lobbyStatus.textContent = `Joined room: ${currentRoomName}`;
-        lobbyOverlay.style.display = 'none';
-        initializeGameMultiplayer();
-      } else if (state === Photon.LoadBalancing.ClientState.Joining) {
-        lobbyStatus.textContent = `Joining room: ${currentRoomName}...`;
-      } else if (state === Photon.LoadBalancing.ClientState.Disconnected) {
-        lobbyStatus.textContent = 'Disconnected. Try again.';
-      }
-    };
-
-    photonClient.onEvent = (code, content, senderId) => {
-      switch(code) {
-        case 1: // Gravity Gun sync
-          updateGravityGunFromNetwork(content);
-          break;
-        case 2: // Portal Gun toggle sync
-          updatePortalGunFromNetwork(content);
-          break;
-      }
-    };
-
-    photonClient.connect();
-    photonClient.joinRoom(currentRoomName).catch(() => {
-      photonClient.createRoom(currentRoomName).catch((err) => {
-        lobbyStatus.textContent = `Error creating/joining room: ${err}`;
-      });
-    });
-  };
-
-  // Game initialization (loads world and weapons)
-  function initializeGameMultiplayer() {
-    const world = new Sketchbook.World('build/assets/world.glb');
+    world = new Sketchbook.World('build/assets/world.glb');
 
     weaponGroup = new THREE.Group();
     world.camera.add(weaponGroup);
@@ -257,75 +206,43 @@
     weaponGroup.visible = false;
 
     const loader = new THREE.GLTFLoader();
-
-    // Load Portal Gun
     loader.load('build/assets/models/mel_portal_gun.glb', (gltf) => {
       const portalGun = gltf.scene;
-      portalGun.name = "portalGun";
       portalGun.scale.set(1.5, 1.5, 1.5);
       weaponGroup.add(portalGun);
     });
 
-    // Load Gravity Gun
-    loader.load('build/assets/models/gravity_gun.glb', (gltf) => {
+    // Load gravity gun model as well
+    loader.load('build/assets/models/gravitygun/gravitygun.glb', (gltf) => {
       const gravityGun = gltf.scene;
-      gravityGun.name = "gravityGun";
       gravityGun.scale.set(1.5, 1.5, 1.5);
-      gravityGun.visible = false;
       weaponGroup.add(gravityGun);
-
-      // Example: Hook fireGravityGun (connect your actual input here)
-      window.fireGravityGun = function(position, rotation) {
-        // Your local gravity gun logic here...
-
-        if (photonClient && photonClient.isJoinedToRoom()) {
-          photonClient.raiseEvent(1, { position, rotation }, { receivers: Photon.LoadBalancing.ReceiverGroup.Others });
-        }
-      };
     });
-  }
 
-  // Network sync handlers
-  function updateGravityGunFromNetwork(data) {
-    if (!weaponGroup) return;
-    const gravityGun = weaponGroup.children.find(c => c.name === "gravityGun");
-    if (gravityGun) {
-      gravityGun.position.set(data.position.x, data.position.y, data.position.z);
-      gravityGun.rotation.set(data.rotation.x, data.rotation.y, data.rotation.z);
-    }
-  }
-
-  function updatePortalGunFromNetwork(data) {
-    if (!weaponGroup) return;
-    weaponGroup.visible = data.visible;
-  }
+    weaponGroup.visible = true;
+  };
 
   // Load Save placeholder
   document.getElementById('loadSaveBtn').onclick = () => {
     alert('Load Save not implemented yet.');
   };
 
-  // Console helpers and commands
+  // Console toggle and commands
   function logToConsole(msg) {
     consoleOutput.textContent += msg + '\n';
     consoleOutput.scrollTop = consoleOutput.scrollHeight;
     console.log(msg);
   }
-
   function toggleConsole() {
     consoleActive = !consoleActive;
     consoleEl.style.display = consoleActive ? 'flex' : 'none';
     if (consoleActive) consoleInput.focus();
   }
-
   function handleCommand(cmd) {
     const c = cmd.toLowerCase();
     if (c === 'toggleportalgun') {
       if (weaponGroup) {
         weaponGroup.visible = !weaponGroup.visible;
-        if (photonClient && photonClient.isJoinedToRoom()) {
-          photonClient.raiseEvent(2, { visible: weaponGroup.visible }, { receivers: Photon.LoadBalancing.ReceiverGroup.Others });
-        }
         logToConsole(`Portal gun ${weaponGroup.visible ? 'enabled' : 'disabled'}`);
       }
     } else if (c === 'help') {
@@ -334,7 +251,6 @@
       logToConsole(`Unknown command: ${cmd}`);
     }
   }
-
   consoleInput.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') {
       const cmd = consoleInput.value.trim();
@@ -344,8 +260,6 @@
       e.preventDefault();
     }
   });
-
-  // Keybindings
   window.addEventListener('keydown', (e) => {
     if (e.key === '`' || e.key === '~') {
       e.preventDefault();
@@ -353,12 +267,56 @@
     } else if (!consoleActive && e.key.toLowerCase() === 'c') {
       if (weaponGroup) {
         weaponGroup.visible = !weaponGroup.visible;
-        if (photonClient && photonClient.isJoinedToRoom()) {
-          photonClient.raiseEvent(2, { visible: weaponGroup.visible }, { receivers: Photon.LoadBalancing.ReceiverGroup.Others });
-        }
         logToConsole(`Portal gun ${weaponGroup.visible ? 'enabled' : 'disabled'}`);
       }
     }
+  });
+
+  // Multiplayer lobby UI toggle
+  showLobbyBtn.addEventListener('click', () => {
+    lobbyOverlay.style.display = 'block';
+  });
+  closeLobbyBtn.addEventListener('click', () => {
+    lobbyOverlay.style.display = 'none';
+    lobbyStatus.textContent = '';
+  });
+
+  // Photon multiplayer connection
+  joinRoomBtn.addEventListener('click', () => {
+    const roomName = roomInput.value.trim();
+    if (!roomName) {
+      lobbyStatus.textContent = 'Please enter a room name.';
+      return;
+    }
+    lobbyStatus.textContent = 'Connecting...';
+
+    if (!photonClient) {
+      // Replace 'your-app-id' with your actual Photon App ID
+      photonClient = new Photon.LoadBalancing.LoadBalancingClient('0e7ba88d-a481-481c-a32b-2e0dabaa8d7e', 'us');
+      photonClient.onError = (errorCode, errorMsg) => {
+        lobbyStatus.textContent = `Error: ${errorMsg} (${errorCode})`;
+        logToConsole(`Photon Error: ${errorMsg} (${errorCode})`);
+      };
+      photonClient.onJoinRoom = () => {
+        lobbyStatus.textContent = `Joined room: ${roomName}`;
+        logToConsole(`Joined room: ${roomName}`);
+      };
+      photonClient.onLeaveRoom = () => {
+        lobbyStatus.textContent = 'Left room';
+        logToConsole('Left room');
+      };
+      photonClient.onStateChange = (state) => {
+        logToConsole(`Photon state: ${state}`);
+      };
+    }
+
+    if (!photonClient.isConnected()) {
+      photonClient.connect();
+    }
+    photonClient.joinRoom(roomName).catch((e) => {
+      lobbyStatus.textContent = 'Failed to join room.';
+      logToConsole('Failed to join room: ' + e);
+    });
   });
 </script>
 
