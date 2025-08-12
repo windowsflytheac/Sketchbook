@@ -53,7 +53,33 @@
   </div>
 
   <script>
-    // Photon setup
+    // *** ORIGINAL SKETCHBOOK WORLD SETUP (KEEP THIS ON TOP) ***
+    const world = new Sketchbook.World('build/assets/world.glb');
+
+    let weaponGroup = null;
+
+    world.ready.then(() => {
+      const scene = world.scene;
+      const camera = world.camera;
+
+      weaponGroup = new THREE.Group();
+      camera.add(weaponGroup);
+      scene.add(camera);
+      weaponGroup.position.set(0.5, -0.7, -1);
+      weaponGroup.visible = false;
+
+      const loader = new THREE.GLTFLoader();
+      loader.load('build/assets/models/mel_portal_gun.glb', (gltf) => {
+        const portalGun = gltf.scene;
+        portalGun.scale.set(1.5, 1.5, 1.5);
+        weaponGroup.add(portalGun);
+      });
+    });
+
+
+    // *** PHOTON & CONSOLE SETUP (AFTER SKETCHBOOK INIT) ***
+
+    // Photon Realtime App ID
     const photonAppId = "0e7ba88d-a481-481c-a32b-2e0dabaa8d7e";
     const photonClient = new Photon.LoadBalancing.LoadBalancingClient(photonAppId, "us");
 
@@ -64,7 +90,6 @@
 
     let consoleActive = false;
     let cheatsLevel = 0;
-    let weaponGroup = null;
 
     function logToConsole(msg) {
       consoleOutput.textContent += msg + '\n';
@@ -109,7 +134,7 @@
             logToConsole('noclip requires sv_cheats 1 or higher');
           } else {
             logToConsole('Noclip toggled (stub)');
-            // implement noclip here
+            // TODO: implement noclip
           }
           break;
 
@@ -176,7 +201,6 @@
       }
     });
 
-    // Toggle console with ~ and `
     window.addEventListener('keydown', (e) => {
       if (e.key === '`' || e.key === '~') {
         toggleConsole();
@@ -184,27 +208,6 @@
       } else if (!consoleActive && e.key.toLowerCase() === 'c') {
         if (weaponGroup) weaponGroup.visible = !weaponGroup.visible;
       }
-    });
-
-    // Sketchbook world setup
-    const world = new Sketchbook.World('build/assets/world.glb');
-
-    world.ready.then(() => {
-      const scene = world.scene;
-      const camera = world.camera;
-
-      weaponGroup = new THREE.Group();
-      camera.add(weaponGroup);
-      scene.add(camera);
-      weaponGroup.position.set(0.5, -0.7, -1);
-      weaponGroup.visible = false;
-
-      const loader = new THREE.GLTFLoader();
-      loader.load('build/assets/models/mel_portal_gun.glb', (gltf) => {
-        const portalGun = gltf.scene;
-        portalGun.scale.set(1.5, 1.5, 1.5);
-        weaponGroup.add(portalGun);
-      });
     });
 
     photonClient.onStateChange = (state) => {
