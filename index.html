@@ -3,106 +3,60 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Sketchbook Half-Life 2 Style Menu + Multiplayer + Console</title>
+<title>Sketchbook with Valve Intro & Portal Gun</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Roboto+Mono&display=swap');
-
-  /* Reset */
   body, html {
     margin: 0; padding: 0; height: 100%;
-    background: #000; 
-    font-family: 'Roboto Mono', monospace;
-    color: #f1a20f; /* HL2 orange */
+    background: #222;
+    font-family: monospace;
+    color: white;
     overflow: hidden;
-    user-select: none;
   }
-
-  /* Valve Intro Video Overlay */
   #valveIntro {
     position: fixed;
     top: 0; left: 0;
     width: 100vw; height: 100vh;
     object-fit: cover;
     background: black;
-    z-index: 15000;
+    z-index: 10000;
   }
-
-  /* HL2-style main menu */
+  #enableSoundOverlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.8);
+    color: #f1a20f;
+    font-family: monospace;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 2rem;
+    cursor: pointer;
+    z-index: 12000;
+  }
   #menuOverlay {
     position: fixed;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: #000000ee;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    z-index: 11000;
-    opacity: 0;
-    transition: opacity 0.7s ease;
+    top: 10vh; left: 50%; transform: translateX(-50%);
+    background: #333;
+    padding: 1rem 2rem;
+    border-radius: 6px;
+    box-shadow: 0 0 12px #f1a20f;
+    color: #f1a20f;
+    z-index: 9000;
   }
-  #menuOverlay.visible {
-    opacity: 1;
-  }
-
-  #menuTitle {
-    font-size: 4rem;
-    font-weight: bold;
-    margin-bottom: 2rem;
-    text-shadow: 0 0 12px #f1a20f;
-  }
-
-  .menu-button {
+  #menuOverlay button {
     background: transparent;
     border: 2px solid #f1a20f;
     color: #f1a20f;
-    padding: 1rem 4rem;
-    margin: 0.75rem 0;
-    font-size: 1.6rem;
-    font-weight: 700;
-    letter-spacing: 1.2px;
+    padding: 0.5rem 1.5rem;
+    margin: 0 0.5rem;
     cursor: pointer;
-    width: 280px;
-    text-align: center;
-    text-transform: uppercase;
-    box-shadow: 0 0 15px #f1a20f88;
-    transition: background 0.3s ease, color 0.3s ease;
+    font-size: 1rem;
+    border-radius: 4px;
   }
-  .menu-button:hover {
+  #menuOverlay button:hover {
     background: #f1a20f;
     color: #000;
-    box-shadow: 0 0 30px #f1a20fff;
   }
-
-  /* Loading bar container */
-  #progressBarContainer {
-    margin-top: 3rem;
-    width: 60%;
-    height: 24px;
-    background: #111;
-    border: 2px solid #f1a20f;
-    border-radius: 4px;
-    overflow: hidden;
-    box-shadow: 0 0 15px #f1a20f88 inset;
-    display: none;
-  }
-
-  /* Loading bar fill */
-  #progressBar {
-    height: 100%;
-    width: 0%;
-    background: linear-gradient(90deg, #f1a20f, #ffd65c);
-    box-shadow: 0 0 20px #f1a20fff;
-    transition: width 0.2s ease;
-  }
-
-  /* Gravity gun placeholder container */
-  #gravityGunPlaceholder {
-    margin-top: 3rem;
-    width: 180px;
-    height: 180px;
-  }
-
-  /* Console styles */
   #console {
     position: fixed;
     bottom: 0; left: 0; right: 0;
@@ -112,7 +66,7 @@
     flex-direction: column;
     padding: 10px;
     overflow-y: auto;
-    z-index: 12000;
+    z-index: 11000;
   }
   #console-output {
     flex-grow: 1;
@@ -135,225 +89,115 @@
   }
 </style>
 
-<!-- ThreeJS and dependencies -->
 <script src="https://cdn.jsdelivr.net/npm/three@0.153.0/build/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.153.0/examples/js/loaders/GLTFLoader.js"></script>
-
-<!-- Sketchbook -->
 <script src="build/sketchbook.min.js"></script>
 
-<!-- Photon Multiplayer SDK -->
-<script src="https://cdn.jsdelivr.net/npm/photon-sdk@4.1.1/Photon-Javascript_SDK.min.js"></script>
 </head>
 <body>
 
-<!-- Valve Intro Video -->
-  <video id="valveIntro" autoplay playsinline>
+<video id="valveIntro" autoplay muted playsinline>
   <source src="valveintro.mp4" type="video/mp4" />
   Your browser does not support the video tag.
 </video>
 
-<!-- HL2-style Main Menu -->
+<audio id="valveIntroAudio" src="valveintro_sound.mp3"></audio>
+
+<div id="enableSoundOverlay">Click to enable sound</div>
+
 <div id="menuOverlay">
-  <div id="menuTitle">HALF-LIFE 2</div>
-  <button id="startGameBtn" class="menu-button">Start Game</button>
-  <button id="loadSaveBtn" class="menu-button">Load Save</button>
-
-  <div id="progressBarContainer">
-    <div id="progressBar"></div>
-  </div>
-
-  <div id="gravityGunPlaceholder"></div>
+  <button id="startGameBtn">Start Game</button>
+  <button id="loadSaveBtn">Load Save</button>
 </div>
 
-<!-- Console -->
 <div id="console">
   <div id="console-output"></div>
   <input id="console-input" autocomplete="off" spellcheck="false" placeholder="Enter command..." />
 </div>
 
 <script>
-  // Globals
   let weaponGroup = null;
   let consoleActive = false;
 
-  // Elements
   const valveIntro = document.getElementById('valveIntro');
+  const valveIntroAudio = document.getElementById('valveIntroAudio');
+  const soundOverlay = document.getElementById('enableSoundOverlay');
   const menuOverlay = document.getElementById('menuOverlay');
-  const progressBarContainer = document.getElementById('progressBarContainer');
-  const progressBar = document.getElementById('progressBar');
   const consoleEl = document.getElementById('console');
   const consoleOutput = document.getElementById('console-output');
   const consoleInput = document.getElementById('console-input');
 
-  // Valve intro fade and menu show
+  // Enable audio on user click (required for autoplay sound)
+  soundOverlay.addEventListener('click', () => {
+    valveIntro.muted = false;
+    valveIntro.play();
+    valveIntroAudio.play();
+    soundOverlay.style.display = 'none';
+  });
+
+  // Valve intro video ended - remove video and show menu
   valveIntro.onended = () => {
     valveIntro.style.transition = 'opacity 1s ease';
     valveIntro.style.opacity = '0';
     setTimeout(() => valveIntro.remove(), 1000);
-    showMenu();
+    menuOverlay.style.display = 'block';
   };
 
-  // Optionally skip valve intro video
-  window.addEventListener('keydown', (e) => {
-    if (valveIntro && !valveIntro.ended && (e.key === "Escape" || e.key === " ")) {
-      valveIntro.pause();
-      valveIntro.dispatchEvent(new Event('ended'));
-    }
-  });
-
-  // Show HL2-style menu
-  function showMenu() {
-    menuOverlay.classList.add('visible');
-  }
-
-  // Start Game logic with fixed loading bar
+  // Start Game
   document.getElementById('startGameBtn').onclick = () => {
-    progressBarContainer.style.display = 'block';
-    progressBar.style.width = '0%';
-    menuOverlay.style.pointerEvents = 'none'; // disable buttons
+    menuOverlay.style.display = 'none';
 
-    let loadProgress = 0;
     const world = new Sketchbook.World('build/assets/world.glb');
 
-    const fakeInterval = setInterval(() => {
-      loadProgress += Math.random() * 8;
-      if (loadProgress > 95) loadProgress = 95;
-      progressBar.style.width = loadProgress + '%';
-    }, 100);
+    weaponGroup = new THREE.Group();
+    world.camera.add(weaponGroup);
+    world.scene.add(world.camera);
+    weaponGroup.position.set(0.5, -0.7, -1);
+    weaponGroup.visible = false;
 
-    world.ready.then(() => {
-      clearInterval(fakeInterval);
-      progressBar.style.width = '100%';
-
-      // Setup portal gun
-      weaponGroup = new THREE.Group();
-      world.camera.add(weaponGroup);
-      world.scene.add(world.camera);
-      weaponGroup.position.set(0.5, -0.7, -1);
-      weaponGroup.visible = false;
-
-      const loader = new THREE.GLTFLoader();
-      loader.load('build/assets/models/mel_portal_gun.glb', (gltf) => {
-        const portalGun = gltf.scene;
-        portalGun.scale.set(1.5, 1.5, 1.5);
-        weaponGroup.add(portalGun);
-      });
-
-      setTimeout(() => {
-        progressBarContainer.style.display = 'none';
-        menuOverlay.classList.remove('visible');
-        menuOverlay.style.pointerEvents = '';
-      }, 600);
+    const loader = new THREE.GLTFLoader();
+    loader.load('build/assets/models/mel_portal_gun.glb', (gltf) => {
+      const portalGun = gltf.scene;
+      portalGun.scale.set(1.5, 1.5, 1.5);
+      weaponGroup.add(portalGun);
     });
   };
 
   // Load Save placeholder
   document.getElementById('loadSaveBtn').onclick = () => {
-    alert('Load Save feature not implemented yet.');
+    alert('Load Save not implemented yet.');
   };
 
-  // Console utilities
+  // Console toggle
   function logToConsole(msg) {
     consoleOutput.textContent += msg + '\n';
     consoleOutput.scrollTop = consoleOutput.scrollHeight;
     console.log(msg);
   }
-
   function toggleConsole() {
     consoleActive = !consoleActive;
     consoleEl.style.display = consoleActive ? 'flex' : 'none';
     if (consoleActive) consoleInput.focus();
   }
 
-  // Console command handler
+  // Console commands simplified for demo
   function handleCommand(cmd) {
-    const args = cmd.trim().split(/\s+/);
-    const command = args[0].toLowerCase();
-
-    switch (command) {
-      case 'sv_cheats':
-        if (args.length < 2) {
-          logToConsole('Usage: sv_cheats [0|1|2]');
-          break;
-        }
-        const level = parseInt(args[1], 10);
-        if ([0,1,2].includes(level)) {
-          cheatsLevel = level;
-          logToConsole(`sv_cheats set to ${level}`);
-        } else {
-          logToConsole('Invalid sv_cheats level. Use 0, 1, or 2.');
-        }
-        break;
-
-      case 'toggleportalgun':
-        if (weaponGroup) {
-          weaponGroup.visible = !weaponGroup.visible;
-          logToConsole(`Portal gun ${weaponGroup.visible ? 'enabled' : 'disabled'}`);
-        }
-        break;
-
-      case 'noclip':
-        logToConsole('Noclip not implemented yet.');
-        break;
-
-      case 'join':
-        if (args.length < 2) {
-          logToConsole('Usage: join [roomname]');
-          break;
-        }
-        if (!photonClient.isInLobby()) {
-          logToConsole('Must be in lobby to join a room.');
-          break;
-        }
-        photonClient.joinRoom(args[1]).then(() => {
-          logToConsole(`Joining room ${args[1]}...`);
-        }).catch(e => {
-          logToConsole(`Failed to join room: ${e.message || e}`);
-        });
-        break;
-
-      case 'leave':
-        if (!photonClient.isInRoom) {
-          logToConsole('Not currently in a room.');
-          break;
-        }
-        photonClient.leaveRoom().then(() => {
-          logToConsole('Left room.');
-        }).catch(e => {
-          logToConsole(`Failed to leave room: ${e.message || e}`);
-        });
-        break;
-
-      case 'host':
-        if (args.length < 2) {
-          logToConsole('Usage: host [roomname]');
-          break;
-        }
-        if (!photonClient.isInLobby()) {
-          logToConsole('Must be in lobby to host a room.');
-          break;
-        }
-        photonClient.createRoom(args[1], { maxPlayers: 8 }).then(() => {
-          logToConsole(`Hosting room ${args[1]}...`);
-        }).catch(e => {
-          logToConsole(`Failed to host room: ${e.message || e}`);
-        });
-        break;
-
-      case 'help':
-        logToConsole('Commands: sv_cheats, toggleportalgun, noclip, join [room], leave, host [room], help');
-        break;
-
-      default:
-        logToConsole(`Unknown command: ${command}`);
+    const c = cmd.toLowerCase();
+    if (c === 'toggleportalgun') {
+      if (weaponGroup) {
+        weaponGroup.visible = !weaponGroup.visible;
+        logToConsole(`Portal gun ${weaponGroup.visible ? 'enabled' : 'disabled'}`);
+      }
+    } else if (c === 'help') {
+      logToConsole('Commands: toggleportalgun, help');
+    } else {
+      logToConsole(`Unknown command: ${cmd}`);
     }
   }
 
-  // Console input event
   consoleInput.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') {
-      const cmd = consoleInput.value;
+      const cmd = consoleInput.value.trim();
       consoleInput.value = '';
       logToConsole('> ' + cmd);
       handleCommand(cmd);
@@ -361,7 +205,7 @@
     }
   });
 
-  // Key bindings for console toggle and portal gun toggle
+  // Keybindings
   window.addEventListener('keydown', (e) => {
     if (e.key === '`' || e.key === '~') {
       e.preventDefault();
@@ -373,27 +217,6 @@
       }
     }
   });
-
-  // Photon multiplayer setup
-  const photonAppId = "0e7ba88d-a481-481c-a32b-2e0dabaa8d7e";
-  const photonClient = new Photon.LoadBalancing.LoadBalancingClient(photonAppId, "us");
-
-  photonClient.onStateChange = (state) => {
-    logToConsole(`Photon State: ${Photon.LoadBalancing.ConnectionStateToName(state)}`);
-
-    if (state === Photon.LoadBalancing.ConnectionState.ConnectedToMaster) {
-      photonClient.joinLobby();
-    }
-    if (state === Photon.LoadBalancing.ConnectionState.JoinedLobby) {
-      logToConsole('Joined lobby, ready for commands.');
-    }
-    if (state === Photon.LoadBalancing.ConnectionState.JoinedRoom) {
-      logToConsole(`Joined room: ${photonClient.myRoomName}`);
-    }
-  };
-
-  photonClient.connect();
-
 </script>
 
 </body>
