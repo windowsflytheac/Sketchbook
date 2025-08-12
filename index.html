@@ -1,70 +1,184 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Sketchbook Multiplayer + Portal Gun + Source Console</title>
-  <style>
-    body {
-      margin: 0; overflow: hidden; background: #111; color: #0f0; font-family: monospace;
-    }
-    #console {
-      position: fixed;
-      bottom: 0; left: 0; right: 0;
-      max-height: 40%;
-      background: rgba(0,0,0,0.85);
-      display: none;
-      flex-direction: column;
-      padding: 10px;
-      overflow-y: auto;
-      z-index: 10000;
-    }
-    #console-output {
-      flex-grow: 1;
-      overflow-y: auto;
-      white-space: pre-wrap;
-      font-size: 14px;
-      line-height: 1.2em;
-      margin-bottom: 5px;
-    }
-    #console-input {
-      font-family: monospace;
-      font-size: 14px;
-      border: none;
-      background: black;
-      color: #0f0;
-      outline: none;
-      padding: 5px;
-      width: 100%;
-      box-sizing: border-box;
-    }
-  </style>
+<meta charset="UTF-8" />
+<title>Sketchbook HL2 Style Menu + Multiplayer + Console</title>
+<style>
+  body {
+    margin: 0; overflow: hidden; background: #111; color: #0f0; font-family: monospace;
+  }
 
-  <script src="https://cdn.jsdelivr.net/npm/three@0.153.0/build/three.min.js"></script>
-  <script src="https://unpkg.com/three@0.153.0/examples/js/loaders/GLTFLoader.js"></script>
-  <script src="build/sketchbook.min.js"></script>
+  /* Menu overlay */
+  #menuOverlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: #000d;
+    color: #0f0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 11000;
+    font-size: 1.5rem;
+    user-select: none;
+  }
+  #menuTitle {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    font-weight: bold;
+  }
+  .menu-button {
+    background: transparent;
+    border: 2px solid #0f0;
+    color: #0f0;
+    padding: 0.75rem 2rem;
+    margin: 0.5rem;
+    cursor: pointer;
+    font-family: monospace;
+    font-size: 1.25rem;
+    transition: background 0.3s, color 0.3s;
+  }
+  .menu-button:hover {
+    background: #0f0;
+    color: #000;
+  }
+  #progressBarContainer {
+    width: 50%;
+    background: #004400;
+    border: 1px solid #0f0;
+    margin-top: 1.5rem;
+    height: 20px;
+    border-radius: 4px;
+    overflow: hidden;
+    display: none;
+  }
+  #progressBar {
+    height: 100%;
+    width: 0%;
+    background: #0f0;
+  }
 
-  <!-- Photon SDK CDN -->
-  <script src="https://cdn.jsdelivr.net/npm/photon-sdk@4.1.1/Photon-Javascript_SDK.min.js"></script>
+  /* Gravity gun placeholder container */
+  #gravityGunPlaceholder {
+    margin-top: 2rem;
+    width: 150px;
+    height: 150px;
+  }
+
+  /* Console styles */
+  #console {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    max-height: 40%;
+    background: rgba(0,0,0,0.85);
+    display: none;
+    flex-direction: column;
+    padding: 10px;
+    overflow-y: auto;
+    z-index: 12000;
+  }
+  #console-output {
+    flex-grow: 1;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    font-size: 14px;
+    line-height: 1.2em;
+    margin-bottom: 5px;
+  }
+  #console-input {
+    font-family: monospace;
+    font-size: 14px;
+    border: none;
+    background: black;
+    color: #0f0;
+    outline: none;
+    padding: 5px;
+    width: 100%;
+    box-sizing: border-box;
+  }
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.153.0/build/three.min.js"></script>
+<script src="https://unpkg.com/three@0.153.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="build/sketchbook.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/photon-sdk@4.1.1/Photon-Javascript_SDK.min.js"></script>
 </head>
 <body>
-  <div id="console" style="display: none; flex-direction: column;">
-    <div id="console-output"></div>
-    <input id="console-input" autocomplete="off" spellcheck="false" placeholder="Enter command..." />
+
+<!-- Menu overlay -->
+<div id="menuOverlay">
+  <div id="menuTitle">Sketchbook Source</div>
+  <button id="startGameBtn" class="menu-button">Start Game</button>
+  <button id="loadSaveBtn" class="menu-button">Load Save</button>
+
+  <div id="progressBarContainer">
+    <div id="progressBar"></div>
   </div>
 
-  <script>
-    // *** ORIGINAL SKETCHBOOK WORLD SETUP (KEEP THIS ON TOP) ***
-    const world = new Sketchbook.World('build/assets/world.glb');
+  <div id="gravityGunPlaceholder"></div>
+</div>
 
-    let weaponGroup = null;
+<!-- Console -->
+<div id="console">
+  <div id="console-output"></div>
+  <input id="console-input" autocomplete="off" spellcheck="false" placeholder="Enter command..." />
+</div>
+
+<script>
+  // ===== HL2-Style Menu and Loading Progress =====
+  const menuOverlay = document.getElementById('menuOverlay');
+  const progressBarContainer = document.getElementById('progressBarContainer');
+  const progressBar = document.getElementById('progressBar');
+
+  let world = null;
+  let weaponGroup = null;
+
+  // Setup Three.js scene for gravity gun placeholder inside the menu
+  const gravityGunPlaceholder = document.getElementById('gravityGunPlaceholder');
+  const placeholderScene = new THREE.Scene();
+  const placeholderCamera = new THREE.PerspectiveCamera(45, gravityGunPlaceholder.clientWidth / gravityGunPlaceholder.clientHeight, 0.1, 100);
+  placeholderCamera.position.z = 3;
+
+  const placeholderRenderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+  placeholderRenderer.setSize(gravityGunPlaceholder.clientWidth, gravityGunPlaceholder.clientHeight);
+  gravityGunPlaceholder.appendChild(placeholderRenderer.domElement);
+
+  const geometry = new THREE.BoxGeometry(1, 1, 1);
+  const material = new THREE.MeshBasicMaterial({ color: 0x00ff00, wireframe: true });
+  const cube = new THREE.Mesh(geometry, material);
+  placeholderScene.add(cube);
+
+  function animatePlaceholder() {
+    requestAnimationFrame(animatePlaceholder);
+    cube.rotation.x += 0.01;
+    cube.rotation.y += 0.01;
+    placeholderRenderer.render(placeholderScene, placeholderCamera);
+  }
+  animatePlaceholder();
+
+  // Start Game button
+  document.getElementById('startGameBtn').onclick = () => {
+    progressBarContainer.style.display = 'block';
+    let loadProgress = 0;
+    progressBar.style.width = '0%';
+
+    world = new Sketchbook.World('build/assets/world.glb');
+
+    // Fake progress update since Sketchbook.World.ready has no real progress event
+    const fakeInterval = setInterval(() => {
+      loadProgress += 3;
+      if (loadProgress > 90) loadProgress = 90;
+      progressBar.style.width = loadProgress + '%';
+    }, 100);
 
     world.ready.then(() => {
-      const scene = world.scene;
-      const camera = world.camera;
+      clearInterval(fakeInterval);
+      progressBar.style.width = '100%';
 
+      // Setup weapon group with portal gun
       weaponGroup = new THREE.Group();
-      camera.add(weaponGroup);
-      scene.add(camera);
+      world.camera.add(weaponGroup);
+      world.scene.add(world.camera);
       weaponGroup.position.set(0.5, -0.7, -1);
       weaponGroup.visible = false;
 
@@ -74,157 +188,162 @@
         portalGun.scale.set(1.5, 1.5, 1.5);
         weaponGroup.add(portalGun);
       });
+
+      menuOverlay.style.display = 'none';
     });
+  };
 
+  // Load Save button stub
+  document.getElementById('loadSaveBtn').onclick = () => {
+    alert('Load Save not implemented yet.');
+  };
 
-    // *** PHOTON & CONSOLE SETUP (AFTER SKETCHBOOK INIT) ***
+  // ===== Console & Photon Multiplayer Setup =====
+  const photonAppId = "0e7ba88d-a481-481c-a32b-2e0dabaa8d7e";
+  const photonClient = new Photon.LoadBalancing.LoadBalancingClient(photonAppId, "us");
 
-    // Photon Realtime App ID
-    const photonAppId = "0e7ba88d-a481-481c-a32b-2e0dabaa8d7e";
-    const photonClient = new Photon.LoadBalancing.LoadBalancingClient(photonAppId, "us");
+  const consoleEl = document.getElementById('console');
+  const consoleOutput = document.getElementById('console-output');
+  const consoleInput = document.getElementById('console-input');
 
-    // Console elements
-    const consoleEl = document.getElementById('console');
-    const consoleOutput = document.getElementById('console-output');
-    const consoleInput = document.getElementById('console-input');
+  let consoleActive = false;
+  let cheatsLevel = 0;
 
-    let consoleActive = false;
-    let cheatsLevel = 0;
+  function logToConsole(msg) {
+    consoleOutput.textContent += msg + '\n';
+    consoleOutput.scrollTop = consoleOutput.scrollHeight;
+    console.log(msg);
+  }
 
-    function logToConsole(msg) {
-      consoleOutput.textContent += msg + '\n';
-      consoleOutput.scrollTop = consoleOutput.scrollHeight;
-      console.log(msg);
+  function toggleConsole() {
+    consoleActive = !consoleActive;
+    consoleEl.style.display = consoleActive ? 'flex' : 'none';
+    if (consoleActive) consoleInput.focus();
+  }
+
+  function handleCommand(cmd) {
+    const args = cmd.trim().split(/\s+/);
+    const command = args[0].toLowerCase();
+
+    switch (command) {
+      case 'sv_cheats':
+        if (args.length < 2) {
+          logToConsole('Usage: sv_cheats [0|1|2]');
+          break;
+        }
+        const level = parseInt(args[1], 10);
+        if ([0, 1, 2].includes(level)) {
+          cheatsLevel = level;
+          logToConsole(`sv_cheats set to ${level}`);
+        } else {
+          logToConsole('Invalid sv_cheats level. Use 0, 1, or 2.');
+        }
+        break;
+
+      case 'toggleportalgun':
+        if (weaponGroup) {
+          weaponGroup.visible = !weaponGroup.visible;
+          logToConsole(`Portal gun ${weaponGroup.visible ? 'enabled' : 'disabled'}`);
+        }
+        break;
+
+      case 'noclip':
+        if (cheatsLevel < 1) {
+          logToConsole('noclip requires sv_cheats 1 or higher');
+        } else {
+          logToConsole('Noclip toggled (stub)');
+          // TODO: implement noclip
+        }
+        break;
+
+      case 'join':
+        if (args.length < 2) {
+          logToConsole('Usage: join [roomname]');
+          break;
+        }
+        if (!photonClient.isInLobby()) {
+          logToConsole('Must be in lobby to join a room.');
+          break;
+        }
+        photonClient.joinRoom(args[1]).then(() => {
+          logToConsole(`Joining room ${args[1]}...`);
+        }).catch(e => {
+          logToConsole(`Failed to join room: ${e.message || e}`);
+        });
+        break;
+
+      case 'leave':
+        if (!photonClient.isInRoom) {
+          logToConsole('Not currently in a room.');
+          break;
+        }
+        photonClient.leaveRoom().then(() => {
+          logToConsole('Left room.');
+        }).catch(e => {
+          logToConsole(`Failed to leave room: ${e.message || e}`);
+        });
+        break;
+
+      case 'host':
+        if (args.length < 2) {
+          logToConsole('Usage: host [roomname]');
+          break;
+        }
+        if (!photonClient.isInLobby()) {
+          logToConsole('Must be in lobby to host a room.');
+          break;
+        }
+        photonClient.createRoom(args[1], { maxPlayers: 8 }).then(() => {
+          logToConsole(`Hosting room ${args[1]}...`);
+        }).catch(e => {
+          logToConsole(`Failed to host room: ${e.message || e}`);
+        });
+        break;
+
+      case 'help':
+        logToConsole('Commands: sv_cheats, toggleportalgun, noclip, join [room], leave, host [room], help');
+        break;
+
+      default:
+        logToConsole(`Unknown command: ${command}`);
     }
+  }
 
-    function toggleConsole() {
-      consoleActive = !consoleActive;
-      consoleEl.style.display = consoleActive ? 'flex' : 'none';
-      if (consoleActive) consoleInput.focus();
+  consoleInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      const cmd = consoleInput.value;
+      consoleInput.value = '';
+      logToConsole('> ' + cmd);
+      handleCommand(cmd);
+      e.preventDefault();
     }
+  });
 
-    function handleCommand(cmd) {
-      const args = cmd.trim().split(/\s+/);
-      const command = args[0].toLowerCase();
-
-      switch (command) {
-        case 'sv_cheats':
-          if (args.length < 2) {
-            logToConsole('Usage: sv_cheats [0|1|2]');
-            break;
-          }
-          const level = parseInt(args[1], 10);
-          if ([0, 1, 2].includes(level)) {
-            cheatsLevel = level;
-            logToConsole(`sv_cheats set to ${level}`);
-          } else {
-            logToConsole('Invalid sv_cheats level. Use 0, 1, or 2.');
-          }
-          break;
-
-        case 'toggleportalgun':
-          if (weaponGroup) {
-            weaponGroup.visible = !weaponGroup.visible;
-            logToConsole(`Portal gun ${weaponGroup.visible ? 'enabled' : 'disabled'}`);
-          }
-          break;
-
-        case 'noclip':
-          if (cheatsLevel < 1) {
-            logToConsole('noclip requires sv_cheats 1 or higher');
-          } else {
-            logToConsole('Noclip toggled (stub)');
-            // TODO: implement noclip
-          }
-          break;
-
-        case 'join':
-          if (args.length < 2) {
-            logToConsole('Usage: join [roomname]');
-            break;
-          }
-          if (!photonClient.isInLobby()) {
-            logToConsole('Must be in lobby to join a room.');
-            break;
-          }
-          photonClient.joinRoom(args[1]).then(() => {
-            logToConsole(`Joining room ${args[1]}...`);
-          }).catch(e => {
-            logToConsole(`Failed to join room: ${e.message || e}`);
-          });
-          break;
-
-        case 'leave':
-          if (!photonClient.isInRoom) {
-            logToConsole('Not currently in a room.');
-            break;
-          }
-          photonClient.leaveRoom().then(() => {
-            logToConsole('Left room.');
-          }).catch(e => {
-            logToConsole(`Failed to leave room: ${e.message || e}`);
-          });
-          break;
-
-        case 'host':
-          if (args.length < 2) {
-            logToConsole('Usage: host [roomname]');
-            break;
-          }
-          if (!photonClient.isInLobby()) {
-            logToConsole('Must be in lobby to host a room.');
-            break;
-          }
-          photonClient.createRoom(args[1], { maxPlayers: 8 }).then(() => {
-            logToConsole(`Hosting room ${args[1]}...`);
-          }).catch(e => {
-            logToConsole(`Failed to host room: ${e.message || e}`);
-          });
-          break;
-
-        case 'help':
-          logToConsole('Commands: sv_cheats, toggleportalgun, noclip, join [room], leave, host [room], help');
-          break;
-
-        default:
-          logToConsole(`Unknown command: ${command}`);
-      }
+  window.addEventListener('keydown', (e) => {
+    if (e.key === '`' || e.key === '~') {
+      toggleConsole();
+      e.preventDefault();
+    } else if (!consoleActive && e.key.toLowerCase() === 'c') {
+      if (weaponGroup) weaponGroup.visible = !weaponGroup.visible;
     }
+  });
 
-    consoleInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
-        const cmd = consoleInput.value;
-        consoleInput.value = '';
-        logToConsole('> ' + cmd);
-        handleCommand(cmd);
-        e.preventDefault();
-      }
-    });
+  photonClient.onStateChange = (state) => {
+    logToConsole(`Photon State: ${Photon.LoadBalancing.ConnectionStateToName(state)}`);
 
-    window.addEventListener('keydown', (e) => {
-      if (e.key === '`' || e.key === '~') {
-        toggleConsole();
-        e.preventDefault();
-      } else if (!consoleActive && e.key.toLowerCase() === 'c') {
-        if (weaponGroup) weaponGroup.visible = !weaponGroup.visible;
-      }
-    });
+    if (state === Photon.LoadBalancing.ConnectionState.ConnectedToMaster) {
+      photonClient.joinLobby();
+    }
+    if (state === Photon.LoadBalancing.ConnectionState.JoinedLobby) {
+      logToConsole('Joined lobby, ready for commands.');
+    }
+    if (state === Photon.LoadBalancing.ConnectionState.JoinedRoom) {
+      logToConsole(`Joined room: ${photonClient.myRoomName}`);
+    }
+  };
 
-    photonClient.onStateChange = (state) => {
-      logToConsole(`Photon State: ${Photon.LoadBalancing.ConnectionStateToName(state)}`);
+  photonClient.connect();
+</script>
 
-      if (state === Photon.LoadBalancing.ConnectionState.ConnectedToMaster) {
-        photonClient.joinLobby();
-      }
-      if (state === Photon.LoadBalancing.ConnectionState.JoinedLobby) {
-        logToConsole('Joined lobby, ready for commands.');
-      }
-      if (state === Photon.LoadBalancing.ConnectionState.JoinedRoom) {
-        logToConsole(`Joined room: ${photonClient.myRoomName}`);
-      }
-    };
-
-    photonClient.connect();
-  </script>
 </body>
 </html>
