@@ -2,67 +2,104 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title>Sketchbook HL2 Style Menu + Multiplayer + Console</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Sketchbook Half-Life 2 Style Menu + Multiplayer + Console</title>
 <style>
-  body {
-    margin: 0; overflow: hidden; background: #111; color: #0f0; font-family: monospace;
+  @import url('https://fonts.googleapis.com/css2?family=Roboto+Mono&display=swap');
+
+  /* Reset */
+  body, html {
+    margin: 0; padding: 0; height: 100%;
+    background: #000; 
+    font-family: 'Roboto Mono', monospace;
+    color: #f1a20f; /* HL2 orange */
+    overflow: hidden;
+    user-select: none;
   }
 
-  /* Menu overlay */
+  /* Valve Intro Video Overlay */
+  #valveIntro {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    object-fit: cover;
+    background: black;
+    z-index: 15000;
+  }
+
+  /* HL2-style main menu */
   #menuOverlay {
     position: fixed;
     top: 0; left: 0; right: 0; bottom: 0;
-    background: #000d;
-    color: #0f0;
+    background: #000000ee;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     z-index: 11000;
-    font-size: 1.5rem;
-    user-select: none;
+    opacity: 0;
+    transition: opacity 0.7s ease;
   }
+  #menuOverlay.visible {
+    opacity: 1;
+  }
+
   #menuTitle {
-    font-size: 3rem;
-    margin-bottom: 1rem;
+    font-size: 4rem;
     font-weight: bold;
+    margin-bottom: 2rem;
+    text-shadow: 0 0 12px #f1a20f;
   }
+
   .menu-button {
     background: transparent;
-    border: 2px solid #0f0;
-    color: #0f0;
-    padding: 0.75rem 2rem;
-    margin: 0.5rem;
+    border: 2px solid #f1a20f;
+    color: #f1a20f;
+    padding: 1rem 4rem;
+    margin: 0.75rem 0;
+    font-size: 1.6rem;
+    font-weight: 700;
+    letter-spacing: 1.2px;
     cursor: pointer;
-    font-family: monospace;
-    font-size: 1.25rem;
-    transition: background 0.3s, color 0.3s;
+    width: 280px;
+    text-align: center;
+    text-transform: uppercase;
+    box-shadow: 0 0 15px #f1a20f88;
+    transition: background 0.3s ease, color 0.3s ease;
   }
   .menu-button:hover {
-    background: #0f0;
+    background: #f1a20f;
     color: #000;
+    box-shadow: 0 0 30px #f1a20fff;
   }
+
+  /* Loading bar container */
   #progressBarContainer {
-    width: 50%;
-    background: #004400;
-    border: 1px solid #0f0;
-    margin-top: 1.5rem;
-    height: 20px;
+    margin-top: 3rem;
+    width: 60%;
+    height: 24px;
+    background: #111;
+    border: 2px solid #f1a20f;
     border-radius: 4px;
     overflow: hidden;
+    box-shadow: 0 0 15px #f1a20f88 inset;
     display: none;
   }
+
+  /* Loading bar fill */
   #progressBar {
     height: 100%;
     width: 0%;
-    background: #0f0;
+    background: linear-gradient(90deg, #f1a20f, #ffd65c);
+    box-shadow: 0 0 20px #f1a20fff;
+    transition: width 0.2s ease;
   }
 
   /* Gravity gun placeholder container */
   #gravityGunPlaceholder {
-    margin-top: 2rem;
-    width: 150px;
-    height: 150px;
+    margin-top: 3rem;
+    width: 180px;
+    height: 180px;
   }
 
   /* Console styles */
@@ -90,7 +127,7 @@
     font-size: 14px;
     border: none;
     background: black;
-    color: #0f0;
+    color: #f1a20f;
     outline: none;
     padding: 5px;
     width: 100%;
@@ -98,16 +135,27 @@
   }
 </style>
 
+<!-- ThreeJS and dependencies -->
 <script src="https://cdn.jsdelivr.net/npm/three@0.153.0/build/three.min.js"></script>
-<script src="https://unpkg.com/three@0.153.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.153.0/examples/js/loaders/GLTFLoader.js"></script>
+
+<!-- Sketchbook -->
 <script src="build/sketchbook.min.js"></script>
+
+<!-- Photon Multiplayer SDK -->
 <script src="https://cdn.jsdelivr.net/npm/photon-sdk@4.1.1/Photon-Javascript_SDK.min.js"></script>
 </head>
 <body>
 
-<!-- Menu overlay -->
+<!-- Valve Intro Video -->
+<video id="valveIntro" autoplay muted playsinline>
+  <source src="valveintro.mp4" type="video/mp4" />
+  Your browser does not support the video tag.
+</video>
+
+<!-- HL2-style Main Menu -->
 <div id="menuOverlay">
-  <div id="menuTitle">Sketchbook Source</div>
+  <div id="menuTitle">HALF-LIFE 2</div>
   <button id="startGameBtn" class="menu-button">Start Game</button>
   <button id="loadSaveBtn" class="menu-button">Load Save</button>
 
@@ -125,49 +173,52 @@
 </div>
 
 <script>
-  // ===== HL2-Style Menu and Loading Progress =====
+  // Globals
+  let weaponGroup = null;
+  let consoleActive = false;
+
+  // Elements
+  const valveIntro = document.getElementById('valveIntro');
   const menuOverlay = document.getElementById('menuOverlay');
   const progressBarContainer = document.getElementById('progressBarContainer');
   const progressBar = document.getElementById('progressBar');
+  const consoleEl = document.getElementById('console');
+  const consoleOutput = document.getElementById('console-output');
+  const consoleInput = document.getElementById('console-input');
 
-  let world = null;
-  let weaponGroup = null;
+  // Valve intro fade and menu show
+  valveIntro.onended = () => {
+    valveIntro.style.transition = 'opacity 1s ease';
+    valveIntro.style.opacity = '0';
+    setTimeout(() => valveIntro.remove(), 1000);
+    showMenu();
+  };
 
-  // Setup Three.js scene for gravity gun placeholder inside the menu
-  const gravityGunPlaceholder = document.getElementById('gravityGunPlaceholder');
-  const placeholderScene = new THREE.Scene();
-  const placeholderCamera = new THREE.PerspectiveCamera(45, gravityGunPlaceholder.clientWidth / gravityGunPlaceholder.clientHeight, 0.1, 100);
-  placeholderCamera.position.z = 3;
+  // Optionally skip valve intro video
+  window.addEventListener('keydown', (e) => {
+    if (valveIntro && !valveIntro.ended && (e.key === "Escape" || e.key === " ")) {
+      valveIntro.pause();
+      valveIntro.dispatchEvent(new Event('ended'));
+    }
+  });
 
-  const placeholderRenderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
-  placeholderRenderer.setSize(gravityGunPlaceholder.clientWidth, gravityGunPlaceholder.clientHeight);
-  gravityGunPlaceholder.appendChild(placeholderRenderer.domElement);
-
-  const geometry = new THREE.BoxGeometry(1, 1, 1);
-  const material = new THREE.MeshBasicMaterial({ color: 0x00ff00, wireframe: true });
-  const cube = new THREE.Mesh(geometry, material);
-  placeholderScene.add(cube);
-
-  function animatePlaceholder() {
-    requestAnimationFrame(animatePlaceholder);
-    cube.rotation.x += 0.01;
-    cube.rotation.y += 0.01;
-    placeholderRenderer.render(placeholderScene, placeholderCamera);
+  // Show HL2-style menu
+  function showMenu() {
+    menuOverlay.classList.add('visible');
   }
-  animatePlaceholder();
 
-  // Start Game button
+  // Start Game logic with fixed loading bar
   document.getElementById('startGameBtn').onclick = () => {
     progressBarContainer.style.display = 'block';
-    let loadProgress = 0;
     progressBar.style.width = '0%';
+    menuOverlay.style.pointerEvents = 'none'; // disable buttons
 
-    world = new Sketchbook.World('build/assets/world.glb');
+    let loadProgress = 0;
+    const world = new Sketchbook.World('build/assets/world.glb');
 
-    // Fake progress update since Sketchbook.World.ready has no real progress event
     const fakeInterval = setInterval(() => {
-      loadProgress += 3;
-      if (loadProgress > 90) loadProgress = 90;
+      loadProgress += Math.random() * 8;
+      if (loadProgress > 95) loadProgress = 95;
       progressBar.style.width = loadProgress + '%';
     }, 100);
 
@@ -175,7 +226,7 @@
       clearInterval(fakeInterval);
       progressBar.style.width = '100%';
 
-      // Setup weapon group with portal gun
+      // Setup portal gun
       weaponGroup = new THREE.Group();
       world.camera.add(weaponGroup);
       world.scene.add(world.camera);
@@ -189,26 +240,20 @@
         weaponGroup.add(portalGun);
       });
 
-      menuOverlay.style.display = 'none';
+      setTimeout(() => {
+        progressBarContainer.style.display = 'none';
+        menuOverlay.classList.remove('visible');
+        menuOverlay.style.pointerEvents = '';
+      }, 600);
     });
   };
 
-  // Load Save button stub
+  // Load Save placeholder
   document.getElementById('loadSaveBtn').onclick = () => {
-    alert('Load Save not implemented yet.');
+    alert('Load Save feature not implemented yet.');
   };
 
-  // ===== Console & Photon Multiplayer Setup =====
-  const photonAppId = "0e7ba88d-a481-481c-a32b-2e0dabaa8d7e";
-  const photonClient = new Photon.LoadBalancing.LoadBalancingClient(photonAppId, "us");
-
-  const consoleEl = document.getElementById('console');
-  const consoleOutput = document.getElementById('console-output');
-  const consoleInput = document.getElementById('console-input');
-
-  let consoleActive = false;
-  let cheatsLevel = 0;
-
+  // Console utilities
   function logToConsole(msg) {
     consoleOutput.textContent += msg + '\n';
     consoleOutput.scrollTop = consoleOutput.scrollHeight;
@@ -221,6 +266,7 @@
     if (consoleActive) consoleInput.focus();
   }
 
+  // Console command handler
   function handleCommand(cmd) {
     const args = cmd.trim().split(/\s+/);
     const command = args[0].toLowerCase();
@@ -232,7 +278,7 @@
           break;
         }
         const level = parseInt(args[1], 10);
-        if ([0, 1, 2].includes(level)) {
+        if ([0,1,2].includes(level)) {
           cheatsLevel = level;
           logToConsole(`sv_cheats set to ${level}`);
         } else {
@@ -248,12 +294,7 @@
         break;
 
       case 'noclip':
-        if (cheatsLevel < 1) {
-          logToConsole('noclip requires sv_cheats 1 or higher');
-        } else {
-          logToConsole('Noclip toggled (stub)');
-          // TODO: implement noclip
-        }
+        logToConsole('Noclip not implemented yet.');
         break;
 
       case 'join':
@@ -309,6 +350,7 @@
     }
   }
 
+  // Console input event
   consoleInput.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') {
       const cmd = consoleInput.value;
@@ -319,14 +361,22 @@
     }
   });
 
+  // Key bindings for console toggle and portal gun toggle
   window.addEventListener('keydown', (e) => {
     if (e.key === '`' || e.key === '~') {
-      toggleConsole();
       e.preventDefault();
+      toggleConsole();
     } else if (!consoleActive && e.key.toLowerCase() === 'c') {
-      if (weaponGroup) weaponGroup.visible = !weaponGroup.visible;
+      if (weaponGroup) {
+        weaponGroup.visible = !weaponGroup.visible;
+        logToConsole(`Portal gun ${weaponGroup.visible ? 'enabled' : 'disabled'}`);
+      }
     }
   });
+
+  // Photon multiplayer setup
+  const photonAppId = "0e7ba88d-a481-481c-a32b-2e0dabaa8d7e";
+  const photonClient = new Photon.LoadBalancing.LoadBalancingClient(photonAppId, "us");
 
   photonClient.onStateChange = (state) => {
     logToConsole(`Photon State: ${Photon.LoadBalancing.ConnectionStateToName(state)}`);
@@ -343,6 +393,7 @@
   };
 
   photonClient.connect();
+
 </script>
 
 </body>
