@@ -1,15 +1,103 @@
 <!DOCTYPE html>
 <html>
-
 <head>
 	<title>Sketchbook</title>
+	<style>
+		/* GMod style menu */
+		#gmod-menu {
+			position: fixed;
+			top: 10px;
+			right: 10px;
+			background: rgba(30,30,30,0.9);
+			color: white;
+			padding: 10px;
+			font-family: Arial, sans-serif;
+			display: none;
+			z-index: 9999;
+		}
+	</style>
 </head>
-
 <body>
 	<script src="build/sketchbook.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/three@0.153.0/build/three.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/three@0.153.0/examples/js/loaders/GLTFLoader.js"></script>
+
 	<script>
 		const world = new Sketchbook.World('build/assets/world.glb');
+
+		// Wait for the scene to be ready
+		world.ready.then(() => {
+			const scene = world.scene;
+			const camera = world.camera;
+			const renderer = world.renderer;
+
+			// Load your portal gun model
+			const loader = new THREE.GLTFLoader();
+			loader.load('build/assets/models/mel_portal_gun.glb', (gltf) => {
+				const portalGun = gltf.scene;
+				portalGun.scale.set(1.5, 1.5, 1.5);
+				portalGun.position.set(0, 0, -1);
+				scene.add(portalGun);
+				window.portalGun = portalGun;
+			});
+
+			// Load portal textures for blue and orange portals
+			const textureLoader = new THREE.TextureLoader();
+			const portalBlueTexture = textureLoader.load('build/assets/textures/portal_blue.png');
+			const portalOrangeTexture = textureLoader.load('build/assets/textures/portal_orange.png');
+
+			const portalGeometry = new THREE.PlaneGeometry(1.5, 2.5);
+
+			const portalBlueMaterial = new THREE.MeshBasicMaterial({
+				map: portalBlueTexture,
+				transparent: true,
+			});
+			const portalOrangeMaterial = new THREE.MeshBasicMaterial({
+				map: portalOrangeTexture,
+				transparent: true,
+			});
+
+			const portalBlueMesh = new THREE.Mesh(portalGeometry, portalBlueMaterial);
+			portalBlueMesh.position.set(1, 1, 0);
+			scene.add(portalBlueMesh);
+			portalBlueMesh.visible = false;
+
+			const portalOrangeMesh = new THREE.Mesh(portalGeometry, portalOrangeMaterial);
+			portalOrangeMesh.position.set(-1, 1, 0);
+			scene.add(portalOrangeMesh);
+			portalOrangeMesh.visible = false;
+
+			// Create GMod style menu
+			const menu = document.createElement('div');
+			menu.id = 'gmod-menu';
+			menu.innerHTML = `
+				<h2>GMod Style Menu</h2>
+				<button id="toggle-portal-gun">Toggle Portal Gun</button><br/><br/>
+				<button id="toggle-portal-blue">Toggle Blue Portal</button><br/><br/>
+				<button id="toggle-portal-orange">Toggle Orange Portal</button>
+			`;
+			document.body.appendChild(menu);
+
+			// Toggle menu visibility with M key
+			let menuVisible = false;
+			window.addEventListener('keydown', (e) => {
+				if (e.key === 'm' || e.key === 'M') {
+					menuVisible = !menuVisible;
+					menu.style.display = menuVisible ? 'block' : 'none';
+				}
+			});
+
+			// Button handlers
+			document.getElementById('toggle-portal-gun').onclick = () => {
+				if (window.portalGun) window.portalGun.visible = !window.portalGun.visible;
+			};
+			document.getElementById('toggle-portal-blue').onclick = () => {
+				portalBlueMesh.visible = !portalBlueMesh.visible;
+			};
+			document.getElementById('toggle-portal-orange').onclick = () => {
+				portalOrangeMesh.visible = !portalOrangeMesh.visible;
+			};
+		});
 	</script>
 </body>
-
 </html>
