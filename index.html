@@ -4,16 +4,6 @@
   <title>Sketchbook Portal Gun</title>
   <style>
     body { margin: 0; overflow: hidden; }
-    #gmod-menu {
-      position: fixed;
-      top: 10px; right: 10px;
-      background: rgba(30,30,30,0.9);
-      color: white;
-      padding: 10px;
-      font-family: Arial, sans-serif;
-      display: none;
-      z-index: 9999;
-    }
   </style>
 </head>
 <body>
@@ -27,113 +17,29 @@
     world.ready.then(() => {
       const scene = world.scene;
       const camera = world.camera;
-      const renderer = world.renderer;
 
-      // Create weapon group attached to camera for first-person
+      // Create weapon group attached to camera
       const weaponGroup = new THREE.Group();
       camera.add(weaponGroup);
       scene.add(camera);
 
-      // Position weaponGroup (Portal 2 style)
       weaponGroup.position.set(0.5, -0.7, -1);
       weaponGroup.rotation.set(0, 0, 0);
+      weaponGroup.visible = false; // hidden initially
 
-      // Load your portal gun .glb model with embedded textures
       const loader = new THREE.GLTFLoader();
       loader.load('build/assets/models/mel_portal_gun.glb', (gltf) => {
         const portalGun = gltf.scene;
         portalGun.scale.set(1.5, 1.5, 1.5);
         weaponGroup.add(portalGun);
-        window.portalGun = portalGun;
       });
 
-      // Weapon selection state & slide animation variables
-      let weaponVisible = false;
-      let slideProgress = 0; // 0 = hidden, 1 = shown
-
-      // Mouse sway tracking
-      let previousMouse = { x: 0, y: 0 };
-      let swayX = 0;
-      let swayY = 0;
-
-      window.addEventListener('mousemove', (e) => {
-        const dx = e.clientX - previousMouse.x;
-        const dy = e.clientY - previousMouse.y;
-        previousMouse = { x: e.clientX, y: e.clientY };
-
-        swayX += dx * 0.002;
-        swayY += dy * 0.002;
-        swayX = THREE.MathUtils.clamp(swayX, -0.05, 0.05);
-        swayY = THREE.MathUtils.clamp(swayY, -0.05, 0.05);
-      });
-
-      // Show/hide weapon functions
-      function showWeapon() { weaponVisible = true; }
-      function hideWeapon() { weaponVisible = false; }
-
-      // Listen for weapon toggle keys
+      // Toggle portal gun visibility on 'C' key
       window.addEventListener('keydown', (e) => {
-        if (e.key === '1') showWeapon();
-        if (e.key === '2') hideWeapon();
-        if (e.key === 'm' || e.key === 'M') {
-          menuVisible = !menuVisible;
-          menu.style.display = menuVisible ? 'block' : 'none';
+        if (e.key.toLowerCase() === 'c') {
+          weaponGroup.visible = !weaponGroup.visible;
         }
       });
-
-      // GMod style menu overlay
-      const menu = document.createElement('div');
-      menu.id = 'gmod-menu';
-      menu.innerHTML = `
-        <h2>GMod Style Menu</h2>
-        <button id="btn-show-weapon">Show Portal Gun (1)</button><br/><br/>
-        <button id="btn-hide-weapon">Hide Portal Gun (2)</button>
-      `;
-      document.body.appendChild(menu);
-
-      document.getElementById('btn-show-weapon').onclick = showWeapon;
-      document.getElementById('btn-hide-weapon').onclick = hideWeapon;
-
-      // Slide animation function
-      function animateWeaponSlide(delta) {
-        const speed = 3;
-        if (weaponVisible && slideProgress < 1) {
-          slideProgress += delta * speed;
-          if (slideProgress > 1) slideProgress = 1;
-        } else if (!weaponVisible && slideProgress > 0) {
-          slideProgress -= delta * speed;
-          if (slideProgress < 0) slideProgress = 0;
-        }
-        weaponGroup.position.x = THREE.MathUtils.lerp(1.5, 0.5, slideProgress);
-        weaponGroup.visible = slideProgress > 0;
-      }
-
-      // Main animation loop
-      let lastTime = performance.now();
-
-      function animate(time = 0) {
-        const delta = (time - lastTime) / 1000;
-        lastTime = time;
-
-        animateWeaponSlide(delta);
-
-        if (weaponGroup.visible) {
-          // Bobbing
-          weaponGroup.position.y = -0.7 + Math.sin(time * 0.01) * 0.02;
-
-          // Weapon sway
-          weaponGroup.rotation.x = THREE.MathUtils.lerp(weaponGroup.rotation.x, -swayY, 0.1);
-          weaponGroup.rotation.y = THREE.MathUtils.lerp(weaponGroup.rotation.y, swayX, 0.1);
-
-          swayX *= 0.9;
-          swayY *= 0.9;
-        }
-
-        renderer.render(scene, camera);
-        requestAnimationFrame(animate);
-      }
-
-      animate();
     });
   </script>
 </body>
