@@ -3,99 +3,84 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Sketchbook 3D All Builds Simulator</title>
+<title>Sketchbook 3D - All Builds Multiplayer</title>
 
-<!-- League Gothic font -->
+<!-- League Gothic font placeholder -->
 <link href="https://fonts.googleapis.com/css2?family=League+Gothic&display=swap" rel="stylesheet" />
 
 <style>
-body, html {
-  margin: 0; padding: 0; height: 100%;
-  background: #222;
-  font-family: 'League Gothic', monospace;
-  color: white;
-  overflow: hidden;
-}
-#valveIntro {
-  position: fixed; top:0; left:0;
-  width: 100vw; height: 100vh;
-  object-fit: cover;
-  background: black;
-  z-index: 10000;
-}
-#enableSoundOverlay {
-  position: fixed; inset:0;
-  background: rgba(0,0,0,0.8);
-  color: #f1a20f;
-  display: flex; justify-content:center; align-items:center;
-  font-size:2rem; cursor:pointer;
-  z-index:12000;
-}
-#menuOverlay {
-  position: fixed; top: 10vh; left:50%; transform:translateX(-50%);
-  background:#333; padding:1rem 2rem;
-  border-radius:6px; box-shadow:0 0 12px #f1a20f;
-  color:#f1a20f; z-index:9000;
-}
-#menuOverlay button, select {
-  background:transparent; border:2px solid #f1a20f;
-  color:#f1a20f; padding:0.5rem 1.5rem; margin:0.5rem 0.5rem 0 0;
-  cursor:pointer; border-radius:4px;
-}
-#menuOverlay button:hover, select:hover {
-  background:#f1a20f; color:#000;
-}
-#console {
-  position: fixed; bottom:0; left:0; right:0;
-  max-height:40%; background: rgba(0,0,0,0.85);
-  display:none; flex-direction:column; padding:10px;
-  overflow-y:auto; z-index:11000;
-}
-#console-output { flex-grow:1; overflow-y:auto; white-space:pre-wrap; font-size:14px; margin-bottom:5px; }
-#console-input {
-  font-family: 'League Gothic', monospace;
-  font-size:14px; border:none; background:black;
-  color:#f1a20f; outline:none; padding:5px;
-  width:100%; box-sizing:border-box;
-}
-#threejsLabel {
-  position: fixed; top:8px; right:12px;
-  font-family:'League Gothic', monospace; color:#f1a20f;
-  font-size:0.85rem; z-index:13000; user-select:none;
-  pointer-events:none; text-shadow:0 0 4px #f1a20f;
-}
-#lobbyOverlay {
-  display:none; position:fixed; top:20vh; left:50%;
-  transform:translateX(-50%);
-  background:#333; padding:1rem 2rem; border-radius:6px;
-  box-shadow:0 0 12px #f1a20f; color:#f1a20f;
-  z-index:14000; width:300px;
-}
-#lobbyOverlay h2 { margin-top:0; font-size:1.2rem; }
-#lobbyOverlay input, #lobbyOverlay button { font-size:1rem; margin-top:0.5rem; width:100%; box-sizing:border-box; }
-#lobbyStatus { margin-top:10px; font-size:0.9rem; min-height:1.5em; white-space:pre-wrap; }
-#escapeOverlay {
-  display:none; position:fixed; top:10vh; left:50%;
-  transform:translateX(-50%);
-  background:#333; padding:1rem 2rem; border-radius:6px;
-  box-shadow:0 0 12px #f1a20f; color:#f1a20f;
-  z-index:15000; width:320px;
-}
-#escapeOverlay h2 { margin-top:0; font-size:1.2rem; }
-#escapeOverlay select { width:100%; margin-top:0.5rem; padding:0.5rem; background:#222; color:#f1a20f; border:2px solid #f1a20f; border-radius:4px; font-family:'League Gothic', monospace; }
-#escapeOverlay button { width:100%; margin-top:0.5rem; padding:0.5rem; background:#f1a20f; color:#000; border:none; border-radius:4px; cursor:pointer; }
+  body, html {
+    margin: 0; padding: 0; height: 100%;
+    background: #222;
+    font-family: 'League Gothic', monospace;
+    color: white;
+    overflow: hidden;
+  }
+  #valveIntro {
+    position: fixed; top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    object-fit: cover; background: black;
+    z-index: 10000;
+  }
+  #enableSoundOverlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.8);
+    color: #f1a20f;
+    display: flex; justify-content: center; align-items: center;
+    font-size: 2rem; cursor: pointer; z-index: 12000;
+  }
+  #menuOverlay {
+    position: fixed; top: 10vh; left: 50%; transform: translateX(-50%);
+    background: #333; padding: 1rem 2rem; border-radius: 6px;
+    box-shadow: 0 0 12px #f1a20f; color: #f1a20f; z-index: 9000;
+  }
+  #menuOverlay button, select {
+    background: transparent; border: 2px solid #f1a20f;
+    color: #f1a20f; padding: 0.5rem 1.5rem; margin: 0 0.5rem 0.5rem 0;
+    cursor: pointer; font-size: 1rem; border-radius: 4px;
+  }
+  #menuOverlay button:hover, select:hover { background: #f1a20f; color: #000; }
+  #console {
+    position: fixed; bottom: 0; left: 0; right: 0; max-height: 40%;
+    background: rgba(0,0,0,0.85); display: none; flex-direction: column;
+    padding: 10px; overflow-y: auto; z-index: 11000;
+  }
+  #console-output { flex-grow: 1; overflow-y: auto; white-space: pre-wrap; font-size: 14px; margin-bottom: 5px; }
+  #console-input { font-family: 'League Gothic', monospace; font-size: 14px;
+    border: none; background: black; color: #f1a20f; outline: none; padding: 5px; width: 100%; }
+  #threejsLabel {
+    position: fixed; top: 8px; right: 12px;
+    color: #f1a20f; font-size: 0.85rem; z-index: 13000;
+    text-shadow: 0 0 4px #f1a20f;
+  }
+  #buildSelector {
+    position: fixed; top: 8px; left: 12px;
+    color: #f1a20f; font-size: 0.9rem; z-index: 13000;
+  }
+  #lobbyOverlay {
+    display: none; position: fixed; top: 20vh; left: 50%;
+    transform: translateX(-50%); background: #333; padding: 1rem 2rem;
+    border-radius: 6px; box-shadow: 0 0 12px #f1a20f; color: #f1a20f;
+    z-index: 14000; width: 300px;
+  }
+  #lobbyOverlay h2 { margin-top: 0; font-size: 1.2rem; }
+  #lobbyOverlay input, #lobbyOverlay button { font-size: 1rem; margin-top: 0.5rem; width: 100%; }
+  #lobbyStatus { margin-top: 10px; font-size: 0.9rem; min-height: 1.5em; white-space: pre-wrap; }
 </style>
 </head>
 <body>
 
 <video id="valveIntro" autoplay muted playsinline>
-  <source src="valveintro.mp4" type="video/mp4">
-  Your browser does not support video.
+  <source src="valveintro.mp4" type="video/mp4" />
+  Your browser does not support the video tag.
 </video>
 <audio id="valveIntroAudio" src="valveintro_sound.mp3"></audio>
 <div id="enableSoundOverlay">Click to enable sound</div>
 
 <div id="menuOverlay">
+  <label for="buildSelect">Select Build:</label>
+  <select id="buildSelect" title="Choose your Sketchbook 3D build version"></select>
+  <br/>
   <button id="startGameBtn">Start Game</button>
   <button id="loadSaveBtn">Load Save</button>
   <button id="showLobbyBtn">Multiplayer Lobby</button>
@@ -114,82 +99,77 @@ body, html {
   <input id="console-input" autocomplete="off" spellcheck="false" placeholder="Enter command..." />
 </div>
 
-<div id="threejsLabel">Three.js: Source Simulator</div>
+<div id="threejsLabel">Three.js: Source</div>
 
-<div id="escapeOverlay">
-  <h2>Select Build Version</h2>
-  <select id="versionSelect"></select>
-  <button id="loadVersionBtn">Load Version</button>
-</div>
+<script src="https://cdn.jsdelivr.net/npm/three@0.153.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.153.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="build/sketchbook.min.js"></script>
 
 <script>
-  // All builds including skipped/patch versions
-  const allBuilds = [
-    {key:'v1', label:'Version 1'},
-    {key:'v2', label:'Version 2'},
-    {key:'v3', label:'Version 3'},
-    {key:'alpha_0.12', label:'Alpha 0.12 (No weapons)'},
-    {key:'beta_2.7', label:'Beta 2.7'},
-    {key:'beta_3.2', label:'Beta 3.2'},
-    {key:'beta_13', label:'Beta 13'},
-    {key:'beta_18.2', label:'Beta 18.2'},
-    {key:'beta_24.2', label:'Beta 24.2 (Full weapons)'},
-    {key:'sketchbook3d', label:'Sketchbook 3D'},
-    {key:'beta_25.1', label:'Beta 25.1'},
-    // add remaining builds/patches up to 25.x as needed
-  ];
-
   const valveIntro = document.getElementById('valveIntro');
   const valveIntroAudio = document.getElementById('valveIntroAudio');
   const soundOverlay = document.getElementById('enableSoundOverlay');
   const menuOverlay = document.getElementById('menuOverlay');
+  const buildSelect = document.getElementById('buildSelect');
+  const threejsLabel = document.getElementById('threejsLabel');
+  const loadSaveBtn = document.getElementById('loadSaveBtn');
+  const startGameBtn = document.getElementById('startGameBtn');
+  const showLobbyBtn = document.getElementById('showLobbyBtn');
+  const lobbyOverlay = document.getElementById('lobbyOverlay');
+  const closeLobbyBtn = document.getElementById('closeLobbyBtn');
+  const joinRoomBtn = document.getElementById('joinRoomBtn');
+  const roomInput = document.getElementById('roomInput');
+  const lobbyStatus = document.getElementById('lobbyStatus');
   const consoleEl = document.getElementById('console');
   const consoleOutput = document.getElementById('console-output');
   const consoleInput = document.getElementById('console-input');
-  const threejsLabel = document.getElementById('threejsLabel');
-  const escapeOverlay = document.getElementById('escapeOverlay');
-  const versionSelect = document.getElementById('versionSelect');
-  const loadVersionBtn = document.getElementById('loadVersionBtn');
 
   let weaponGroup = null;
   let world = null;
   let consoleActive = false;
-  let currentBuildKey = null;
+  let photonClient = null;
 
-  // Populate version select menu
-  allBuilds.forEach(b=>{
+  // Define all builds (Alpha, Beta, Skipped, Sketchbook)
+  const builds = [
+    { key:'alpha_0.1', label:'Alpha 0.1 (No weapons)', portal:false, gravity:false },
+    { key:'alpha_0.2', label:'Alpha 0.2 (No weapons)', portal:false, gravity:false },
+    { key:'beta_1.1', label:'Beta 1.1', portal:true, gravity:false },
+    { key:'beta_2.7', label:'Beta 2.7', portal:true, gravity:false },
+    { key:'beta_3.2', label:'Beta 3.2', portal:true, gravity:false },
+    { key:'beta_18.2', label:'Beta 18.2', portal:true, gravity:false },
+    { key:'beta_24.2', label:'Beta 24.2 (Full weapons)', portal:true, gravity:true },
+    { key:'sketchbook', label:'Sketchbook 3D', portal:true, gravity:true }
+  ];
+
+  // Populate build select
+  builds.forEach(b => {
     const option = document.createElement('option');
-    option.value=b.key;
-    option.textContent=b.label;
-    versionSelect.appendChild(option);
+    option.value = b.key;
+    option.textContent = b.label;
+    buildSelect.appendChild(option);
   });
 
-  soundOverlay.addEventListener('click', ()=>{
-    valveIntro.muted=false; valveIntro.play(); valveIntroAudio.play();
-    soundOverlay.style.display='none';
+  soundOverlay.addEventListener('click', () => {
+    valveIntro.muted = false;
+    valveIntro.play();
+    valveIntroAudio.play();
+    soundOverlay.style.display = 'none';
   });
 
-  // Spacebar to skip Valve intro
-  window.addEventListener('keydown', e=>{
-    if(e.code==='Space'){ 
-      valveIntro.pause(); valveIntro.style.display='none'; menuOverlay.style.display='block'; 
+  // Skip Valve intro on space
+  window.addEventListener('keydown', e => {
+    if(e.code==='Space'){
+      valveIntro.pause();
+      valveIntro.style.opacity='0';
+      setTimeout(()=>valveIntro.remove(),500);
+      menuOverlay.style.display='block';
     }
-    if(e.code==='Escape'){ toggleEscapeMenu(); }
   });
 
-  valveIntro.onended = ()=>{
-    valveIntro.style.display='none';
+  valveIntro.onended = () => {
+    valveIntro.style.opacity='0';
+    setTimeout(()=>valveIntro.remove(),500);
     menuOverlay.style.display='block';
-  };
-
-  function toggleEscapeMenu(){
-    escapeOverlay.style.display = escapeOverlay.style.display==='block'?'none':'block';
-  }
-
-  loadVersionBtn.onclick = ()=>{ 
-    const buildKey = versionSelect.value;
-    loadBuild(buildKey);
-    toggleEscapeMenu();
   };
 
   function logToConsole(msg){
@@ -198,14 +178,26 @@ body, html {
     console.log(msg);
   }
 
-  // Console toggle
-  window.addEventListener('keydown', e=>{
-    if(e.key==='`'||e.key==='~'){ consoleActive=!consoleActive; consoleEl.style.display=consoleActive?'flex':'none'; if(consoleActive)consoleInput.focus(); }
-  });
+  function toggleConsole(){
+    consoleActive=!consoleActive;
+    consoleEl.style.display=consoleActive?'flex':'none';
+    if(consoleActive) consoleInput.focus();
+  }
 
   consoleInput.addEventListener('keydown', e=>{
-    if(e.key==='Enter'){ 
-      const cmd=consoleInput.value.trim(); consoleInput.value=''; logToConsole('> '+cmd); handleCommand(cmd); e.preventDefault();
+    if(e.key==='Enter'){
+      const cmd=consoleInput.value.trim();
+      consoleInput.value='';
+      logToConsole('> '+cmd);
+      handleCommand(cmd);
+      e.preventDefault();
+    }
+  });
+
+  window.addEventListener('keydown', e=>{
+    if(e.key==='`'||e.key==='~'){ e.preventDefault(); toggleConsole(); }
+    else if(!consoleActive && e.key.toLowerCase()==='c'){
+      if(weaponGroup){ weaponGroup.visible=!weaponGroup.visible; logToConsole(`Portal gun ${weaponGroup.visible?'enabled':'disabled'}`); }
     }
   });
 
@@ -213,51 +205,53 @@ body, html {
     const c=cmd.toLowerCase();
     if(c==='toggleportalgun'){ if(weaponGroup){ weaponGroup.visible=!weaponGroup.visible; logToConsole(`Portal gun ${weaponGroup.visible?'enabled':'disabled'}`); } }
     else if(c==='help'){ logToConsole('Commands: toggleportalgun, help'); }
-    else logToConsole(`Unknown command: ${cmd}`);
+    else{ logToConsole(`Unknown command: ${cmd}`); }
   }
 
-  // Load Build function (simulated)
-  function loadBuild(buildKey){
-    currentBuildKey = buildKey;
-    threejsLabel.textContent = allBuilds.find(b=>b.key===buildKey)?.label||'Unknown Build';
+  async function startGame(){
+    const buildKey=buildSelect.value;
+    const build=builds.find(b=>b.key===buildKey);
     menuOverlay.style.display='none';
 
-    // Remove old world/weaponGroup
-    if(world){ world.scene.clear(); weaponGroup=null; world=null; }
+    // Load world
+    world=new Sketchbook.World('build/assets/world.glb');
 
-    // Initialize world (sketchbook.min.js or placeholder)
-    if(buildKey==='sketchbook3d'){
-      world = {scene:new THREE.Scene(), camera:new THREE.PerspectiveCamera(), addWeapon:(w)=>{}}; 
-      logToConsole('Loaded Sketchbook 3D base game.');
-    } else {
-      world = {scene:new THREE.Scene(), camera:new THREE.PerspectiveCamera()};
-      weaponGroup = new THREE.Group();
-      world.camera.add(weaponGroup);
-      world.scene.add(world.camera);
-      weaponGroup.position.set(0.5,-0.7,-1);
-      weaponGroup.visible=true;
+    weaponGroup=new THREE.Group();
+    world.camera.add(weaponGroup);
+    world.scene.add(world.camera);
+    weaponGroup.position.set(0.5,-0.7,-1);
+    weaponGroup.visible=false;
 
-      // Simulate weapons/models; fallback to red ERROR if not available
-      const modelAvailable = ['beta_24.2','sketchbook3d','beta_25.1']; // only "stable" versions
-      if(!modelAvailable.includes(buildKey)){
-        const geometry = new THREE.BoxGeometry(1,1,1);
-        const material = new THREE.MeshBasicMaterial({color:0xff0000});
-        const errorModel = new THREE.Mesh(geometry,material);
-        weaponGroup.add(errorModel);
-      } else {
-        // Load actual model placeholders
-        const geometry = new THREE.BoxGeometry(0.5,0.5,1);
-        const material = new THREE.MeshBasicMaterial({color:0x00ff00});
-        const portalGun = new THREE.Mesh(geometry,material);
-        weaponGroup.add(portalGun);
-      }
+    const loader=new THREE.GLTFLoader();
 
-      logToConsole(`Loaded build: ${buildKey}`);
-    }
+    // Portal Gun
+    loader.load(build.portal?'build/assets/models/mel_portal_gun.glb':'build/assets/models/error.glb', (gltf)=>{
+      const model=gltf.scene; model.scale.set(1.5,1.5,1.5); weaponGroup.add(model);
+      logToConsole(build.portal?'Portal gun loaded':'Portal gun ERROR model loaded');
+    });
+
+    // Gravity Gun
+    loader.load(build.gravity?'build/assets/models/gravitygun/gravitygun.glb':'build/assets/models/error.glb', (gltf)=>{
+      const model=gltf.scene; model.scale.set(1.5,1.5,1.5); weaponGroup.add(model);
+      logToConsole(build.gravity?'Gravity gun loaded':'Gravity gun ERROR model loaded');
+    });
+
+    weaponGroup.visible=build.portal||build.gravity;
+
+    threejsLabel.textContent=`Three.js: Source ${build.label}`;
+    logToConsole(`Started game with build: ${build.label}`);
   }
 
-  document.getElementById('startGameBtn').onclick=()=>{ loadBuild(versionSelect.value); menuOverlay.style.display='none'; };
+  startGameBtn.onclick=startGame;
+
+  loadSaveBtn.onclick=()=>{alert('Load Save not implemented yet.');};
+
+  showLobbyBtn.onclick=()=>{lobbyOverlay.style.display='block';};
+  closeLobbyBtn.onclick=()=>{lobbyOverlay.style.display='none'; lobbyStatus.textContent='';};
+
+  // Multiplayer stub
+  joinRoomBtn.onclick=()=>{ lobbyStatus.textContent='Multiplayer connecting not implemented yet.'; };
+
 </script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.153.0/build/three.min.js"></script>
 </body>
 </html>
