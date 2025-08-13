@@ -135,39 +135,33 @@
     pointer-events: none;
     text-shadow: 0 0 4px #f1a20f;
   }
-  /* Insecure connection modal */
-  #insecureModal {
+  /* Custom GUI Error Popup */
+  #errorPopup {
     position: fixed;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(0,0,0,0.9);
-    color: #f1a20f;
-    font-family: monospace;
-    display: none;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    z-index: 15000;
-  }
-  #insecureModal .modalContent {
-    background: #222;
-    padding: 2rem;
+    top: 30vh; left: 50%; transform: translateX(-50%);
+    background: #331100;
+    border: 2px solid #f1a20f;
     border-radius: 8px;
-    border: 2px solid #f1a20f;
-    max-width: 400px;
-    text-align: center;
-    box-shadow: 0 0 20px #f1a20f;
-  }
-  #insecureModal button {
-    margin: 1rem 0.5rem 0 0.5rem;
-    padding: 0.6rem 1.5rem;
-    background: transparent;
-    border: 2px solid #f1a20f;
+    padding: 1rem 2rem;
     color: #f1a20f;
-    cursor: pointer;
+    z-index: 14000;
+    width: 320px;
+    text-align: center;
+    display: none;
+    box-shadow: 0 0 12px #f1a20f;
+  }
+  #errorPopup button {
+    margin-top: 1rem;
+    padding: 0.5rem 1rem;
+    font-family: monospace;
     font-size: 1rem;
     border-radius: 4px;
+    border: 2px solid #f1a20f;
+    background: transparent;
+    color: #f1a20f;
+    cursor: pointer;
   }
-  #insecureModal button:hover {
+  #errorPopup button:hover {
     background: #f1a20f;
     color: #000;
   }
@@ -206,19 +200,15 @@
   <div id="lobbyStatus" style="margin-top:10px; font-size:0.9rem; min-height: 1.5em;"></div>
 </div>
 
+<!-- Custom Error Popup -->
+<div id="errorPopup">
+  <div>WARNING: THE SERVER IS INSECURE. PLAY AT YOUR OWN RISK.</div>
+  <button id="errorOkBtn">OK</button>
+</div>
+
 <div id="console">
   <div id="console-output"></div>
   <input id="console-input" autocomplete="off" spellcheck="false" placeholder="Enter command..." />
-</div>
-
-<!-- Insecure connection modal -->
-<div id="insecureModal">
-  <div class="modalContent">
-    <h3>WARNING: THE SERVER IS INSECURE</h3>
-    <p>Play at your own risk.</p>
-    <button id="insecureProceedBtn">Proceed</button>
-    <button id="insecureCancelBtn">Cancel</button>
-  </div>
 </div>
 
 <script>
@@ -226,8 +216,6 @@
   let consoleActive = false;
   let world = null;
   let photonClient = null;
-  let pendingRoomName = null;
-  let insecureWarningActive = false;
 
   const valveIntro = document.getElementById('valveIntro');
   const valveIntroAudio = document.getElementById('valveIntroAudio');
@@ -243,9 +231,9 @@
   const roomInput = document.getElementById('roomInput');
   const lobbyStatus = document.getElementById('lobbyStatus');
 
-  const insecureModal = document.getElementById('insecureModal');
-  const insecureProceedBtn = document.getElementById('insecureProceedBtn');
-  const insecureCancelBtn = document.getElementById('insecureCancelBtn');
+  // Custom Error Popup elements
+  const errorPopup = document.getElementById('errorPopup');
+  const errorOkBtn = document.getElementById('errorOkBtn');
 
   // Enable audio on user click (required for autoplay sound)
   soundOverlay.addEventListener('click', () => {
@@ -353,37 +341,25 @@
     lobbyStatus.textContent = '';
   });
 
-  // Photon multiplayer connection and room joining
-  joinRoomBtn.addEventListener('click', () => {
-    const roomName = roomInput.value.trim();
-    if (!roomName) {
-      lobbyStatus.textContent = 'Please enter a room name.';
-      return;
-    }
-    lobbyStatus.textContent = 'Connecting...';
-    pendingRoomName = roomName;
+  // Error popup OK button hides error and attempts connection
+  errorOkBtn.addEventListener('click', () => {
+    errorPopup.style.display = 'none';
+    connectToPhoton();
+  });
 
+  function connectToPhoton() {
     if (!photonClient) {
+      // Replace with your actual Photon App ID and region
       photonClient = new Photon.LoadBalancing.LoadBalancingClient('0e7ba88d-a481-481c-a32b-2e0dabaa8d7e', 'us');
-      insecureWarningActive = false;
 
       photonClient.onError = (errorCode, errorMsg) => {
-        console.log('Photon onError:', errorCode, errorMsg);
-        // Check for insecure connection error (adjust the message to your actual error)
-        if (!insecureWarningActive && errorMsg.toLowerCase().includes('insecure')) {
-          insecureWarningActive = true;
-          lobbyStatus.textContent = 'Connection error: insecure server detected.';
-          logToConsole('Photon Error: insecure server connection blocked.');
-          showInsecureModal();
-        } else {
-          lobbyStatus.textContent = `Error: ${errorMsg} (${errorCode})`;
-          logToConsole(`Photon Error: ${errorMsg} (${errorCode})`);
-        }
+        lobbyStatus.textContent = `Error: ${errorMsg} (${errorCode})`;
+        logToConsole(`Photon Error: ${errorMsg} (${errorCode})`);
       };
 
       photonClient.onJoinRoom = () => {
-        lobbyStatus.textContent = `Joined room: ${pendingRoomName}`;
-        logToConsole(`Joined room: ${pendingRoomName}`);
+        lobbyStatus.textContent = `Joined room: ${roomInput.value.trim()}`;
+        logToConsole(`Joined room: ${roomInput.value.trim()}`);
       };
 
       photonClient.onLeaveRoom = () => {
@@ -396,46 +372,54 @@
       };
     }
 
-    if (!photonClient.isConnected) {
-      photonClient.connect(); // Use default protocol, no TransportProtocol enum here
+    try {
+      photonClient.connect();
+    } catch (e) {
+      logToConsole('Photon connect error: ' + e);
+      lobbyStatus.textContent = 'Connection error.';
     }
+  }
 
-    const tryJoinRoom = () => {
-      if (photonClient.isConnected) {
-        photonClient.joinRoom(pendingRoomName).catch(e => {
+  // Join room button with insecure connection warning
+  joinRoomBtn.addEventListener('click', () => {
+    const roomName = roomInput.value.trim();
+    if (!roomName) {
+      lobbyStatus.textContent = 'Please enter a room name.';
+      return;
+    }
+    lobbyStatus.textContent = '';
+
+    // Show insecure server warning popup
+    errorPopup.style.display = 'block';
+
+    // Store desired room name for after confirmation
+    errorPopup.dataset.targetRoom = roomName;
+  });
+
+  // After clicking OK on error popup, connect and join room
+  function afterErrorOkJoinRoom() {
+    const roomName = errorPopup.dataset.targetRoom;
+    if (!roomName) return;
+
+    connectToPhoton();
+
+    // Wait for connection to establish before joining
+    const joinInterval = setInterval(() => {
+      if (photonClient && photonClient.isConnected) {
+        photonClient.joinRoom(roomName).catch(e => {
           lobbyStatus.textContent = 'Failed to join room.';
           logToConsole('Failed to join room: ' + e);
         });
-      } else {
-        setTimeout(tryJoinRoom, 200);
+        clearInterval(joinInterval);
       }
-    };
-    tryJoinRoom();
-  });
-
-  function showInsecureModal() {
-    insecureModal.style.display = 'flex';
-  }
-  function hideInsecureModal() {
-    insecureModal.style.display = 'none';
+    }, 200);
   }
 
-  insecureProceedBtn.addEventListener('click', () => {
-    hideInsecureModal();
-    lobbyStatus.textContent = 'Bypassing security warning, reconnecting insecurely...';
-    logToConsole('User accepted insecure connection warning.');
-    // Reconnect - simplest approach: disconnect and reconnect forcibly (could be improved)
-    if (photonClient) {
-      photonClient.disconnect();
-      setTimeout(() => photonClient.connect(), 500);
-    }
+  errorOkBtn.addEventListener('click', () => {
+    errorPopup.style.display = 'none';
+    afterErrorOkJoinRoom();
   });
 
-  insecureCancelBtn.addEventListener('click', () => {
-    hideInsecureModal();
-    lobbyStatus.textContent = 'Connection cancelled by user due to insecure server.';
-    logToConsole('User cancelled insecure connection.');
-  });
 </script>
 
 </body>
