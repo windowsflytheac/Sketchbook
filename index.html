@@ -3,21 +3,19 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Sketchbook 3D Three.js (Build 230)</title>
+<title>Sketchbook 3D Three.js (Build Selector Multiplayer)</title>
 
-<!-- League Gothic font -->
+<!-- League Gothic font placeholder -->
 <link href="https://fonts.googleapis.com/css2?family=League+Gothic&display=swap" rel="stylesheet" />
 
 <style>
-  /* Global styling */
   body, html {
     margin: 0; padding: 0; height: 100%;
     background: #222;
-    font-family: 'League Gothic', sans-serif;
+    font-family: 'League Gothic', monospace, monospace;
     color: white;
     overflow: hidden;
   }
-  /* Valve intro video */
   #valveIntro {
     position: fixed;
     top: 0; left: 0;
@@ -26,13 +24,12 @@
     background: black;
     z-index: 10000;
   }
-  /* Sound enable overlay */
   #enableSoundOverlay {
     position: fixed;
     inset: 0;
     background: rgba(0,0,0,0.8);
     color: #f1a20f;
-    font-family: 'League Gothic', sans-serif;
+    font-family: 'League Gothic', monospace;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -40,35 +37,32 @@
     cursor: pointer;
     z-index: 12000;
   }
-  /* Menu overlay */
   #menuOverlay {
     position: fixed;
-    top: 10vh; left: 50%;
-    transform: translateX(-50%);
+    top: 10vh; left: 50%; transform: translateX(-50%);
     background: #333;
     padding: 1rem 2rem;
     border-radius: 6px;
     box-shadow: 0 0 12px #f1a20f;
     color: #f1a20f;
     z-index: 9000;
-    text-align: center;
+    font-family: 'League Gothic', monospace;
   }
-  #menuOverlay button {
+  #menuOverlay button, select {
     background: transparent;
     border: 2px solid #f1a20f;
     color: #f1a20f;
     padding: 0.5rem 1.5rem;
-    margin: 0 0.5rem;
+    margin: 0 0.5rem 0.5rem 0;
     cursor: pointer;
     font-size: 1rem;
     border-radius: 4px;
-    font-family: 'League Gothic', sans-serif;
+    font-family: 'League Gothic', monospace;
   }
-  #menuOverlay button:hover {
+  #menuOverlay button:hover, select:hover {
     background: #f1a20f;
     color: #000;
   }
-  /* Console styling */
   #console {
     position: fixed;
     bottom: 0; left: 0; right: 0;
@@ -79,7 +73,7 @@
     padding: 10px;
     overflow-y: auto;
     z-index: 11000;
-    font-family: monospace;
+    font-family: 'League Gothic', monospace;
   }
   #console-output {
     flex-grow: 1;
@@ -90,7 +84,7 @@
     margin-bottom: 5px;
   }
   #console-input {
-    font-family: monospace;
+    font-family: 'League Gothic', monospace;
     font-size: 14px;
     border: none;
     background: black;
@@ -100,46 +94,11 @@
     width: 100%;
     box-sizing: border-box;
   }
-  /* Lobby overlay */
-  #lobbyOverlay {
-    position: fixed;
-    top: 20vh; left: 50%;
-    transform: translateX(-50%);
-    background: #111;
-    border: 2px solid #f1a20f;
-    border-radius: 8px;
-    padding: 1rem 2rem;
-    color: #f1a20f;
-    z-index: 9500;
-    display: none;
-    width: 300px;
-    text-align: center;
-    font-family: 'League Gothic', sans-serif;
-  }
-  #lobbyOverlay input, #lobbyOverlay button {
-    margin: 0.5rem 0;
-    padding: 0.5rem;
-    font-family: 'League Gothic', sans-serif;
-    font-size: 1rem;
-    border-radius: 4px;
-    border: 1px solid #f1a20f;
-    background: #222;
-    color: #f1a20f;
-  }
-  #lobbyOverlay button {
-    cursor: pointer;
-    border: 2px solid #f1a20f;
-  }
-  #lobbyOverlay button:hover {
-    background: #f1a20f;
-    color: #000;
-  }
-  /* Three.js build label */
   #threejsLabel {
     position: fixed;
     top: 8px;
     right: 12px;
-    font-family: 'League Gothic', sans-serif;
+    font-family: 'League Gothic', monospace;
     color: #f1a20f;
     font-size: 0.85rem;
     z-index: 13000;
@@ -147,16 +106,49 @@
     pointer-events: none;
     text-shadow: 0 0 4px #f1a20f;
   }
+  #buildSelector {
+    position: fixed;
+    top: 8px;
+    left: 12px;
+    color: #f1a20f;
+    font-family: 'League Gothic', monospace;
+    font-size: 0.9rem;
+    z-index: 13000;
+  }
+  #lobbyOverlay {
+    display: none;
+    position: fixed;
+    top: 20vh; left: 50%;
+    transform: translateX(-50%);
+    background: #333;
+    padding: 1rem 2rem;
+    border-radius: 6px;
+    box-shadow: 0 0 12px #f1a20f;
+    color: #f1a20f;
+    z-index: 14000;
+    font-family: 'League Gothic', monospace;
+    width: 300px;
+  }
+  #lobbyOverlay h2 {
+    margin-top: 0;
+    font-size: 1.2rem;
+  }
+  #lobbyOverlay input, #lobbyOverlay button {
+    font-family: 'League Gothic', monospace;
+    font-size: 1rem;
+    margin-top: 0.5rem;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  #lobbyStatus {
+    margin-top: 10px;
+    font-size: 0.9rem;
+    min-height: 1.5em;
+    white-space: pre-wrap;
+  }
 </style>
-
-<script src="https://cdn.jsdelivr.net/npm/three@0.153.0/build/three.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.153.0/examples/js/loaders/GLTFLoader.js"></script>
-<script src="build/sketchbook.min.js"></script>
-
 </head>
 <body>
-
-<div id="threejsLabel">Three.js 24 (Build 230)</div>
 
 <video id="valveIntro" autoplay muted playsinline>
   <source src="valveintro.mp4" type="video/mp4" />
@@ -168,6 +160,14 @@
 <div id="enableSoundOverlay">Click to enable sound</div>
 
 <div id="menuOverlay">
+  <label for="buildSelect">Select Build:</label>
+  <select id="buildSelect" title="Choose your Sketchbook 3D build version">
+    <option value="alpha_0.12">Alpha 0.12 (No weapons)</option>
+    <option value="beta_2.7">Beta 2.7</option>
+    <option value="beta_18.2">Beta 18.2</option>
+    <option value="beta_24.2" selected>Beta 24.2 (Full weapons)</option>
+  </select>
+  <br/>
   <button id="startGameBtn">Start Game</button>
   <button id="loadSaveBtn">Load Save</button>
   <button id="showLobbyBtn">Multiplayer Lobby</button>
@@ -178,7 +178,7 @@
   <input id="roomInput" type="text" placeholder="Room name" />
   <button id="joinRoomBtn">Join Room</button>
   <button id="closeLobbyBtn">Close</button>
-  <div id="lobbyStatus" style="margin-top:10px; font-size:0.9rem; min-height: 1.5em;"></div>
+  <div id="lobbyStatus"></div>
 </div>
 
 <div id="console">
@@ -186,27 +186,63 @@
   <input id="console-input" autocomplete="off" spellcheck="false" placeholder="Enter command..." />
 </div>
 
-<script>
-  let weaponGroup = null;
-  let consoleActive = false;
-  let world = null;
-  let photonClient = null;
+<div id="threejsLabel">Three.js: Source Beta 24.2 (Full weapons)</div>
 
+<script>
+  // Build versions configuration
+  const builds = {
+    'alpha_0.12': {
+      url: 'build/threejsAlpha012/three.min.js',
+      label: 'Three.js: Source Alpha 0.12 (No weapons)',
+      loadPortalGun: false,
+      loadGravityGun: false,
+    },
+    'beta_2.7': {
+      url: 'build/threejsBeta27/three.min.js',
+      label: 'Three.js: Source Beta 2.7',
+      loadPortalGun: true,
+      loadGravityGun: false,
+    },
+    'beta_18.2': {
+      url: 'build/threejsBeta182/three.min.js',
+      label: 'Three.js: Source Beta 18.2',
+      loadPortalGun: true,
+      loadGravityGun: false,
+    },
+    'beta_24.2': {
+      url: 'build/threejsBeta242/three.min.js',
+      label: 'Three.js: Source Beta 24.2 (Full weapons)',
+      loadPortalGun: true,
+      loadGravityGun: true,
+    }
+  };
+
+  // DOM references
   const valveIntro = document.getElementById('valveIntro');
   const valveIntroAudio = document.getElementById('valveIntroAudio');
   const soundOverlay = document.getElementById('enableSoundOverlay');
   const menuOverlay = document.getElementById('menuOverlay');
-  const consoleEl = document.getElementById('console');
-  const consoleOutput = document.getElementById('console-output');
-  const consoleInput = document.getElementById('console-input');
-  const lobbyOverlay = document.getElementById('lobbyOverlay');
+  const buildSelect = document.getElementById('buildSelect');
+  const threejsLabel = document.getElementById('threejsLabel');
+  const loadSaveBtn = document.getElementById('loadSaveBtn');
+  const startGameBtn = document.getElementById('startGameBtn');
   const showLobbyBtn = document.getElementById('showLobbyBtn');
+  const lobbyOverlay = document.getElementById('lobbyOverlay');
   const closeLobbyBtn = document.getElementById('closeLobbyBtn');
   const joinRoomBtn = document.getElementById('joinRoomBtn');
   const roomInput = document.getElementById('roomInput');
   const lobbyStatus = document.getElementById('lobbyStatus');
+  const consoleEl = document.getElementById('console');
+  const consoleOutput = document.getElementById('console-output');
+  const consoleInput = document.getElementById('console-input');
 
-  // Enable audio on user click (required for autoplay sound)
+  // Globals
+  let weaponGroup = null;
+  let world = null;
+  let consoleActive = false;
+  let photonClient = null;
+
+  // Enable audio on click
   soundOverlay.addEventListener('click', () => {
     valveIntro.muted = false;
     valveIntro.play();
@@ -214,46 +250,12 @@
     soundOverlay.style.display = 'none';
   });
 
-  // Valve intro video ended - remove video and show menu
+  // Valve intro end
   valveIntro.onended = () => {
     valveIntro.style.transition = 'opacity 1s ease';
     valveIntro.style.opacity = '0';
     setTimeout(() => valveIntro.remove(), 1000);
     menuOverlay.style.display = 'block';
-  };
-
-  // Single Player start
-  document.getElementById('startGameBtn').onclick = () => {
-    menuOverlay.style.display = 'none';
-
-    world = new Sketchbook.World('build/assets/world.glb');
-
-    weaponGroup = new THREE.Group();
-    world.camera.add(weaponGroup);
-    world.scene.add(world.camera);
-    weaponGroup.position.set(0.5, -0.7, -1);
-    weaponGroup.visible = false;
-
-    const loader = new THREE.GLTFLoader();
-
-    loader.load('build/assets/models/mel_portal_gun.glb', (gltf) => {
-      const portalGun = gltf.scene;
-      portalGun.scale.set(1.5, 1.5, 1.5);
-      weaponGroup.add(portalGun);
-    });
-
-    loader.load('build/assets/models/gravitygun/gravitygun.glb', (gltf) => {
-      const gravityGun = gltf.scene;
-      gravityGun.scale.set(1.5, 1.5, 1.5);
-      weaponGroup.add(gravityGun);
-    });
-
-    weaponGroup.visible = true;
-  };
-
-  // Load Save placeholder
-  document.getElementById('loadSaveBtn').onclick = () => {
-    alert('Load Save not implemented yet.');
   };
 
   // Console helpers
@@ -267,6 +269,30 @@
     consoleEl.style.display = consoleActive ? 'flex' : 'none';
     if (consoleActive) consoleInput.focus();
   }
+
+  consoleInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      const cmd = consoleInput.value.trim();
+      consoleInput.value = '';
+      logToConsole('> ' + cmd);
+      handleCommand(cmd);
+      e.preventDefault();
+    }
+  });
+
+  window.addEventListener('keydown', (e) => {
+    if (e.key === '`' || e.key === '~') {
+      e.preventDefault();
+      toggleConsole();
+    } else if (!consoleActive && e.key.toLowerCase() === 'c') {
+      if (weaponGroup) {
+        weaponGroup.visible = !weaponGroup.visible;
+        logToConsole(`Portal gun ${weaponGroup.visible ? 'enabled' : 'disabled'}`);
+      }
+    }
+  });
+
+  // Console command handler (example)
   function handleCommand(cmd) {
     const c = cmd.toLowerCase();
     if (c === 'toggleportalgun') {
@@ -280,51 +306,125 @@
       logToConsole(`Unknown command: ${cmd}`);
     }
   }
-  consoleInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') {
-      const cmd = consoleInput.value.trim();
-      consoleInput.value = '';
-      logToConsole('> ' + cmd);
-      handleCommand(cmd);
-      e.preventDefault();
-    }
-  });
-  window.addEventListener('keydown', (e) => {
-    if (e.key === '`' || e.key === '~') {
-      e.preventDefault();
-      toggleConsole();
-    } else if (!consoleActive && e.key.toLowerCase() === 'c') {
-      if (weaponGroup) {
-        weaponGroup.visible = !weaponGroup.visible;
-        logToConsole(`Portal gun ${weaponGroup.visible ? 'enabled' : 'disabled'}`);
-      }
-    }
-  });
 
-  // Lobby UI toggle
-  showLobbyBtn.addEventListener('click', () => {
+  // Function to dynamically load scripts
+  function loadScript(url) {
+    return new Promise((resolve, reject) => {
+      const existing = document.querySelector(`script[src="${url}"]`);
+      if (existing) {
+        resolve();
+        return;
+      }
+      const script = document.createElement('script');
+      script.src = url;
+      script.onload = () => resolve();
+      script.onerror = () => reject(`Failed to load script: ${url}`);
+      document.head.appendChild(script);
+    });
+  }
+
+  // Load Three.js and GLTFLoader for selected build
+  async function loadBuildScripts(buildKey) {
+    const build = builds[buildKey];
+    // Remove old three.js and GLTFLoader scripts
+    document.querySelectorAll('script[data-dynamic]').forEach(s => s.remove());
+
+    // Load three.js for this build
+    await new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = build.url;
+      script.dataset.dynamic = 'true';
+      script.onload = resolve;
+      script.onerror = reject;
+      document.head.appendChild(script);
+    });
+
+    // Load GLTFLoader - always from cdn to keep consistent
+    await loadScript('https://cdn.jsdelivr.net/npm/three@0.153.0/examples/js/loaders/GLTFLoader.js');
+
+    // Update label
+    threejsLabel.textContent = build.label;
+  }
+
+  // Start Game function
+  async function startGame() {
+    const buildKey = buildSelect.value;
+    const build = builds[buildKey];
+    try {
+      await loadBuildScripts(buildKey);
+    } catch (e) {
+      alert('Error loading build scripts: ' + e);
+      return;
+    }
+
+    menuOverlay.style.display = 'none';
+
+    world = new Sketchbook.World('build/assets/world.glb');
+
+    weaponGroup = new THREE.Group();
+    world.camera.add(weaponGroup);
+    world.scene.add(world.camera);
+    weaponGroup.position.set(0.5, -0.7, -1);
+    weaponGroup.visible = false;
+
+    const loader = new THREE.GLTFLoader();
+
+    if (build.loadPortalGun) {
+      loader.load('build/assets/models/mel_portal_gun.glb', (gltf) => {
+        const portalGun = gltf.scene;
+        portalGun.scale.set(1.5, 1.5, 1.5);
+        weaponGroup.add(portalGun);
+      });
+    }
+
+    if (build.loadGravityGun) {
+      loader.load('build/assets/models/gravitygun/gravitygun.glb', (gltf) => {
+        const gravityGun = gltf.scene;
+        gravityGun.scale.set(1.5, 1.5, 1.5);
+        weaponGroup.add(gravityGun);
+      });
+    }
+
+    weaponGroup.visible = build.loadPortalGun || build.loadGravityGun;
+
+    logToConsole(`Started game with build: ${build.label}`);
+  }
+
+  startGameBtn.onclick = startGame;
+
+  // Load Save placeholder
+  loadSaveBtn.onclick = () => {
+    alert('Load Save not implemented yet.');
+  };
+
+  // Multiplayer Lobby UI
+  showLobbyBtn.onclick = () => {
     lobbyOverlay.style.display = 'block';
-  });
-  closeLobbyBtn.addEventListener('click', () => {
+  };
+  closeLobbyBtn.onclick = () => {
     lobbyOverlay.style.display = 'none';
     lobbyStatus.textContent = '';
-  });
+  };
 
-  // Photon connection and room join with improved state handling
-  joinRoomBtn.addEventListener('click', () => {
+  // Photon Multiplayer Client Setup
+  // Single shared photon client for all builds
+  const photonAppId = '0e7ba88d-a481-481c-a32b-2e0dabaa8d7e'; // example appId
+  const photonRegion = 'us';
+
+  joinRoomBtn.onclick = () => {
     const roomName = roomInput.value.trim();
     if (!roomName) {
       lobbyStatus.textContent = 'Please enter a room name.';
       return;
     }
-    lobbyStatus.textContent = 'Connecting...';
+    lobbyStatus.textContent = `Connecting to room "${roomName}"...`;
 
     if (!photonClient) {
-      photonClient = new Photon.LoadBalancing.LoadBalancingClient('0e7ba88d-a481-481c-a32b-2e0dabaa8d7e', 'us');
+      photonClient = new Photon.LoadBalancing.LoadBalancingClient(photonAppId, photonRegion);
 
-      photonClient.onError = (errorCode, errorMsg) => {
-        lobbyStatus.textContent = `Error: ${errorMsg} (${errorCode})`;
-        logToConsole(`Photon Error: ${errorMsg} (${errorCode})`);
+      photonClient.onError = (code, msg) => {
+        lobbyStatus.textContent = `Error: ${msg} (${code})`;
+        logToConsole(`Photon Error: ${msg} (${code})`);
       };
 
       photonClient.onJoinRoom = () => {
@@ -350,7 +450,6 @@
         logToConsole('Photon connecting...');
       }
 
-      // Poll until connected to master server before joining room
       const waitForConnection = setInterval(() => {
         if (photonClient.state === State.ConnectedToMasterserver) {
           photonClient.joinRoom(roomName).catch((e) => {
@@ -363,7 +462,7 @@
     }
 
     connectAndJoin();
-  });
+  };
 </script>
 
 </body>
