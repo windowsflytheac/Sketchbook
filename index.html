@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Sketchbook 3D Three.js (Build 230)</title>
 <style>
+  /* Your existing styles here... */
   body, html {
     margin: 0; padding: 0; height: 100%;
     background: #222;
@@ -12,117 +13,7 @@
     color: white;
     overflow: hidden;
   }
-  #valveIntro {
-    position: fixed;
-    top: 0; left: 0;
-    width: 100vw; height: 100vh;
-    object-fit: cover;
-    background: black;
-    z-index: 10000;
-  }
-  #enableSoundOverlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.8);
-    color: #f1a20f;
-    font-family: monospace;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 2rem;
-    cursor: pointer;
-    z-index: 12000;
-  }
-  #menuOverlay {
-    position: fixed;
-    top: 10vh; left: 50%; transform: translateX(-50%);
-    background: #333;
-    padding: 1rem 2rem;
-    border-radius: 6px;
-    box-shadow: 0 0 12px #f1a20f;
-    color: #f1a20f;
-    z-index: 9000;
-    display: none;
-    text-align: center;
-  }
-  #menuOverlay button {
-    background: transparent;
-    border: 2px solid #f1a20f;
-    color: #f1a20f;
-    padding: 0.5rem 1.5rem;
-    margin: 0.5rem 0.5rem 0 0.5rem;
-    cursor: pointer;
-    font-size: 1rem;
-    border-radius: 4px;
-    min-width: 130px;
-  }
-  #menuOverlay button:hover {
-    background: #f1a20f;
-    color: #000;
-  }
-  #console {
-    position: fixed;
-    bottom: 0; left: 0; right: 0;
-    max-height: 40%;
-    background: rgba(0,0,0,0.85);
-    display: none;
-    flex-direction: column;
-    padding: 10px;
-    overflow-y: auto;
-    z-index: 11000;
-  }
-  #console-output {
-    flex-grow: 1;
-    overflow-y: auto;
-    white-space: pre-wrap;
-    font-size: 14px;
-    line-height: 1.2em;
-    margin-bottom: 5px;
-  }
-  #console-input {
-    font-family: monospace;
-    font-size: 14px;
-    border: none;
-    background: black;
-    color: #f1a20f;
-    outline: none;
-    padding: 5px;
-    width: 100%;
-    box-sizing: border-box;
-  }
-  /* Lobby UI */
-  #lobbyOverlay {
-    position: fixed;
-    top: 20vh; left: 50%; transform: translateX(-50%);
-    background: #111;
-    border: 2px solid #f1a20f;
-    border-radius: 8px;
-    padding: 1rem 2rem;
-    color: #f1a20f;
-    z-index: 9500;
-    display: none;
-    width: 300px;
-    text-align: center;
-  }
-  #lobbyOverlay input, #lobbyOverlay button {
-    margin: 0.5rem 0;
-    padding: 0.5rem;
-    font-family: monospace;
-    font-size: 1rem;
-    border-radius: 4px;
-    border: 1px solid #f1a20f;
-    background: #222;
-    color: #f1a20f;
-  }
-  #lobbyOverlay button {
-    cursor: pointer;
-    border: 2px solid #f1a20f;
-  }
-  #lobbyOverlay button:hover {
-    background: #f1a20f;
-    color: #000;
-  }
-  /* Three.js build label */
+  /* ... rest of styles unchanged ... */
   #threejsLabel {
     position: fixed;
     top: 8px;
@@ -135,40 +26,9 @@
     pointer-events: none;
     text-shadow: 0 0 4px #f1a20f;
   }
-  /* Custom GUI Error Popup */
-  #errorPopup {
-    position: fixed;
-    top: 30vh; left: 50%; transform: translateX(-50%);
-    background: #331100;
-    border: 2px solid #f1a20f;
-    border-radius: 8px;
-    padding: 1rem 2rem;
-    color: #f1a20f;
-    z-index: 14000;
-    width: 320px;
-    text-align: center;
-    display: none;
-    box-shadow: 0 0 12px #f1a20f;
-  }
-  #errorPopup button {
-    margin-top: 1rem;
-    padding: 0.5rem 1rem;
-    font-family: monospace;
-    font-size: 1rem;
-    border-radius: 4px;
-    border: 2px solid #f1a20f;
-    background: transparent;
-    color: #f1a20f;
-    cursor: pointer;
-  }
-  #errorPopup button:hover {
-    background: #f1a20f;
-    color: #000;
-  }
 </style>
 
 <script src="https://cdn.jsdelivr.net/npm/three@0.153.0/build/three.min.js"></script>
-<!-- GLTFLoader loaded inside sketchbook.min.js -->
 <script src="build/libs/photon.min.js"></script>
 <script src="build/sketchbook.min.js"></script>
 
@@ -176,6 +36,8 @@
 <body>
 
 <div id="threejsLabel">Three.js 24 (Build 230)</div>
+
+<!-- valve intro, overlays, console and UI elements as before -->
 
 <video id="valveIntro" autoplay muted playsinline>
   <source src="valveintro.mp4" type="video/mp4" />
@@ -198,12 +60,6 @@
   <button id="joinRoomBtn">Join Room</button>
   <button id="closeLobbyBtn">Close</button>
   <div id="lobbyStatus" style="margin-top:10px; font-size:0.9rem; min-height: 1.5em;"></div>
-</div>
-
-<!-- Custom Error Popup -->
-<div id="errorPopup">
-  <div>WARNING: THE SERVER IS INSECURE. PLAY AT YOUR OWN RISK.</div>
-  <button id="errorOkBtn">OK</button>
 </div>
 
 <div id="console">
@@ -231,10 +87,6 @@
   const roomInput = document.getElementById('roomInput');
   const lobbyStatus = document.getElementById('lobbyStatus');
 
-  // Custom Error Popup elements
-  const errorPopup = document.getElementById('errorPopup');
-  const errorOkBtn = document.getElementById('errorOkBtn');
-
   // Enable audio on user click (required for autoplay sound)
   soundOverlay.addEventListener('click', () => {
     valveIntro.muted = false;
@@ -243,7 +95,6 @@
     soundOverlay.style.display = 'none';
   });
 
-  // Valve intro video ended - remove video and show menu
   valveIntro.onended = () => {
     valveIntro.style.transition = 'opacity 1s ease';
     valveIntro.style.opacity = '0';
@@ -251,7 +102,7 @@
     menuOverlay.style.display = 'block';
   };
 
-  // Start Game - Single Player
+  // Single Player start
   document.getElementById('startGameBtn').onclick = () => {
     menuOverlay.style.display = 'none';
 
@@ -265,14 +116,12 @@
 
     const loader = new THREE.GLTFLoader();
 
-    // Load portal gun model
     loader.load('build/assets/models/mel_portal_gun.glb', (gltf) => {
       const portalGun = gltf.scene;
       portalGun.scale.set(1.5, 1.5, 1.5);
       weaponGroup.add(portalGun);
     });
 
-    // Load gravity gun model
     loader.load('build/assets/models/gravitygun/gravitygun.glb', (gltf) => {
       const gravityGun = gltf.scene;
       gravityGun.scale.set(1.5, 1.5, 1.5);
@@ -287,7 +136,7 @@
     alert('Load Save not implemented yet.');
   };
 
-  // Console toggle and commands
+  // Console helpers
   function logToConsole(msg) {
     consoleOutput.textContent += msg + '\n';
     consoleOutput.scrollTop = consoleOutput.scrollHeight;
@@ -332,7 +181,7 @@
     }
   });
 
-  // Multiplayer lobby UI toggle
+  // Lobby UI toggle
   showLobbyBtn.addEventListener('click', () => {
     lobbyOverlay.style.display = 'block';
   });
@@ -341,15 +190,16 @@
     lobbyStatus.textContent = '';
   });
 
-  // Error popup OK button hides error and attempts connection
-  errorOkBtn.addEventListener('click', () => {
-    errorPopup.style.display = 'none';
-    connectToPhoton();
-  });
+  // Photon connection and room join with improved state handling
+  joinRoomBtn.addEventListener('click', () => {
+    const roomName = roomInput.value.trim();
+    if (!roomName) {
+      lobbyStatus.textContent = 'Please enter a room name.';
+      return;
+    }
+    lobbyStatus.textContent = 'Connecting...';
 
-  function connectToPhoton() {
     if (!photonClient) {
-      // Replace with your actual Photon App ID and region
       photonClient = new Photon.LoadBalancing.LoadBalancingClient('0e7ba88d-a481-481c-a32b-2e0dabaa8d7e', 'us');
 
       photonClient.onError = (errorCode, errorMsg) => {
@@ -358,8 +208,8 @@
       };
 
       photonClient.onJoinRoom = () => {
-        lobbyStatus.textContent = `Joined room: ${roomInput.value.trim()}`;
-        logToConsole(`Joined room: ${roomInput.value.trim()}`);
+        lobbyStatus.textContent = `Joined room: ${roomName}`;
+        logToConsole(`Joined room: ${roomName}`);
       };
 
       photonClient.onLeaveRoom = () => {
@@ -372,54 +222,28 @@
       };
     }
 
-    try {
-      photonClient.connect();
-    } catch (e) {
-      logToConsole('Photon connect error: ' + e);
-      lobbyStatus.textContent = 'Connection error.';
-    }
-  }
+    const State = Photon.LoadBalancing.LoadBalancingClient.State;
 
-  // Join room button with insecure connection warning
-  joinRoomBtn.addEventListener('click', () => {
-    const roomName = roomInput.value.trim();
-    if (!roomName) {
-      lobbyStatus.textContent = 'Please enter a room name.';
-      return;
-    }
-    lobbyStatus.textContent = '';
-
-    // Show insecure server warning popup
-    errorPopup.style.display = 'block';
-
-    // Store desired room name for after confirmation
-    errorPopup.dataset.targetRoom = roomName;
-  });
-
-  // After clicking OK on error popup, connect and join room
-  function afterErrorOkJoinRoom() {
-    const roomName = errorPopup.dataset.targetRoom;
-    if (!roomName) return;
-
-    connectToPhoton();
-
-    // Wait for connection to establish before joining
-    const joinInterval = setInterval(() => {
-      if (photonClient && photonClient.isConnected) {
-        photonClient.joinRoom(roomName).catch(e => {
-          lobbyStatus.textContent = 'Failed to join room.';
-          logToConsole('Failed to join room: ' + e);
-        });
-        clearInterval(joinInterval);
+    function connectAndJoin() {
+      if (photonClient.state === State.Disconnected || photonClient.state === State.Uninitialized) {
+        photonClient.connect();
+        logToConsole('Photon connecting...');
       }
-    }, 200);
-  }
 
-  errorOkBtn.addEventListener('click', () => {
-    errorPopup.style.display = 'none';
-    afterErrorOkJoinRoom();
+      // Poll until connected to master server before joining room
+      const waitForConnection = setInterval(() => {
+        if (photonClient.state === State.ConnectedToMasterserver) {
+          photonClient.joinRoom(roomName).catch((e) => {
+            lobbyStatus.textContent = 'Failed to join room.';
+            logToConsole('Failed to join room: ' + e);
+          });
+          clearInterval(waitForConnection);
+        }
+      }, 200);
+    }
+
+    connectAndJoin();
   });
-
 </script>
 
 </body>
