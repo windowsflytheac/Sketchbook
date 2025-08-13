@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Sketchbook 3D Three.js 24 (Build 230)</title>
+<title>Sketchbook 3D Three.js (Build 230)</title>
 <style>
   body, html {
     margin: 0; padding: 0; height: 100%;
@@ -135,11 +135,11 @@
     pointer-events: none;
     text-shadow: 0 0 4px #f1a20f;
   }
-  /* Insecure warning modal */
+  /* Insecure connection modal */
   #insecureModal {
     position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.85);
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.9);
     color: #f1a20f;
     font-family: monospace;
     display: none;
@@ -147,37 +147,29 @@
     justify-content: center;
     align-items: center;
     z-index: 15000;
+  }
+  #insecureModal .modalContent {
+    background: #222;
     padding: 2rem;
+    border-radius: 8px;
+    border: 2px solid #f1a20f;
+    max-width: 400px;
     text-align: center;
-  }
-  #insecureModal h1 {
-    font-size: 2rem;
-    margin-bottom: 1rem;
-    text-shadow: 0 0 10px #f1a20f;
-  }
-  #insecureModal p {
-    font-size: 1.2rem;
-    margin-bottom: 2rem;
+    box-shadow: 0 0 20px #f1a20f;
   }
   #insecureModal button {
+    margin: 1rem 0.5rem 0 0.5rem;
+    padding: 0.6rem 1.5rem;
     background: transparent;
     border: 2px solid #f1a20f;
     color: #f1a20f;
-    font-size: 1rem;
-    padding: 0.5rem 1.5rem;
-    margin: 0 1rem;
     cursor: pointer;
+    font-size: 1rem;
     border-radius: 4px;
-    min-width: 130px;
-    transition: background 0.3s, color 0.3s;
   }
   #insecureModal button:hover {
     background: #f1a20f;
     color: #000;
-  }
-  #insecureModalButtons {
-    display: flex;
-    justify-content: center;
   }
 </style>
 
@@ -214,19 +206,19 @@
   <div id="lobbyStatus" style="margin-top:10px; font-size:0.9rem; min-height: 1.5em;"></div>
 </div>
 
-<!-- Insecure connection warning modal -->
-<div id="insecureModal">
-  <h1>WARNING: THE SERVER IS INSECURE</h1>
-  <p>PLAY AT YOUR OWN RISK.</p>
-  <div id="insecureModalButtons">
-    <button id="insecureProceedBtn">Proceed Anyway</button>
-    <button id="insecureCancelBtn">Cancel</button>
-  </div>
-</div>
-
 <div id="console">
   <div id="console-output"></div>
   <input id="console-input" autocomplete="off" spellcheck="false" placeholder="Enter command..." />
+</div>
+
+<!-- Insecure connection modal -->
+<div id="insecureModal">
+  <div class="modalContent">
+    <h3>WARNING: THE SERVER IS INSECURE</h3>
+    <p>Play at your own risk.</p>
+    <button id="insecureProceedBtn">Proceed</button>
+    <button id="insecureCancelBtn">Cancel</button>
+  </div>
 </div>
 
 <script>
@@ -234,8 +226,8 @@
   let consoleActive = false;
   let world = null;
   let photonClient = null;
-  let insecureWarningActive = false;
   let pendingRoomName = null;
+  let insecureWarningActive = false;
 
   const valveIntro = document.getElementById('valveIntro');
   const valveIntroAudio = document.getElementById('valveIntroAudio');
@@ -373,11 +365,11 @@
 
     if (!photonClient) {
       photonClient = new Photon.LoadBalancing.LoadBalancingClient('0e7ba88d-a481-481c-a32b-2e0dabaa8d7e', 'us');
-      photonClient.setTransportProtocol(Photon.LoadBalancing.TransportProtocol.Wss);
-
       insecureWarningActive = false;
 
       photonClient.onError = (errorCode, errorMsg) => {
+        console.log('Photon onError:', errorCode, errorMsg);
+        // Check for insecure connection error (adjust the message to your actual error)
         if (!insecureWarningActive && errorMsg.toLowerCase().includes('insecure')) {
           insecureWarningActive = true;
           lobbyStatus.textContent = 'Connection error: insecure server detected.';
@@ -405,7 +397,7 @@
     }
 
     if (!photonClient.isConnected) {
-      photonClient.connect();
+      photonClient.connect(); // Use default protocol, no TransportProtocol enum here
     }
 
     const tryJoinRoom = () => {
@@ -432,8 +424,11 @@
     hideInsecureModal();
     lobbyStatus.textContent = 'Bypassing security warning, reconnecting insecurely...';
     logToConsole('User accepted insecure connection warning.');
-    photonClient.setTransportProtocol(Photon.LoadBalancing.TransportProtocol.WebSocket); // Switch to non-secure WS
-    photonClient.connect();
+    // Reconnect - simplest approach: disconnect and reconnect forcibly (could be improved)
+    if (photonClient) {
+      photonClient.disconnect();
+      setTimeout(() => photonClient.connect(), 500);
+    }
   });
 
   insecureCancelBtn.addEventListener('click', () => {
