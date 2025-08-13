@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Sketchbook with Valve Intro & Portal Gun</title>
+<title>Sketchbook 3D Beta Three.js 24 (Build 230)</title>
 <style>
   body, html {
     margin: 0; padding: 0; height: 100%;
@@ -119,15 +119,34 @@
     background: #f1a20f;
     color: #000;
   }
+  /* Top-left version label */
+  #versionLabel {
+    position: fixed;
+    top: 5px;
+    left: 5px;
+    z-index: 13000;
+    color: #f1a20f;
+    font-family: monospace;
+    font-size: 12px;
+    font-weight: bold;
+    user-select: none;
+    background: rgba(0,0,0,0.6);
+    padding: 2px 6px;
+    border-radius: 4px;
+    pointer-events: none;
+  }
 </style>
 
 <script src="https://cdn.jsdelivr.net/npm/three@0.153.0/build/three.min.js"></script>
-<!-- Removed deprecated GLTFLoader script and will load from module inside sketchbook.min.js -->
+<!-- GLTFLoader is now included as a module inside sketchbook.min.js -->
 <script src="build/libs/photon.min.js"></script>
 <script src="build/sketchbook.min.js"></script>
 
 </head>
 <body>
+
+<!-- Version label -->
+<div id="versionLabel">Three.js 24 (Build 230)</div>
 
 <video id="valveIntro" autoplay muted playsinline>
   <source src="valveintro.mp4" type="video/mp4" />
@@ -212,7 +231,6 @@
       weaponGroup.add(portalGun);
     });
 
-    // Load gravity gun model as well
     loader.load('build/assets/models/gravitygun/gravitygun.glb', (gltf) => {
       const gravityGun = gltf.scene;
       gravityGun.scale.set(1.5, 1.5, 1.5);
@@ -281,7 +299,7 @@
     lobbyStatus.textContent = '';
   });
 
-  // Photon multiplayer connection
+  // Photon multiplayer connection and room join
   joinRoomBtn.addEventListener('click', () => {
     const roomName = roomInput.value.trim();
     if (!roomName) {
@@ -291,20 +309,27 @@
     lobbyStatus.textContent = 'Connecting...';
 
     if (!photonClient) {
-      // Replace 'your-app-id' with your actual Photon App ID
-      photonClient = new Photon.LoadBalancing.LoadBalancingClient('0e7ba88d-a481-481c-a32b-2e0dabaa8d7e', 'us');
+      photonClient = new Photon.LoadBalancing.LoadBalancingClient(
+        '0e7ba88d-a481-481c-a32b-2e0dabaa8d7e', // Your Photon App ID
+        'us' // Region
+      );
+
       photonClient.onError = (errorCode, errorMsg) => {
         lobbyStatus.textContent = `Error: ${errorMsg} (${errorCode})`;
         logToConsole(`Photon Error: ${errorMsg} (${errorCode})`);
       };
+
       photonClient.onJoinRoom = () => {
         lobbyStatus.textContent = `Joined room: ${roomName}`;
         logToConsole(`Joined room: ${roomName}`);
+        // TODO: Spawn your player model here
       };
+
       photonClient.onLeaveRoom = () => {
         lobbyStatus.textContent = 'Left room';
         logToConsole('Left room');
       };
+
       photonClient.onStateChange = (state) => {
         logToConsole(`Photon state: ${state}`);
       };
@@ -313,10 +338,20 @@
     if (!photonClient.isConnected()) {
       photonClient.connect();
     }
-    photonClient.joinRoom(roomName).catch((e) => {
-      lobbyStatus.textContent = 'Failed to join room.';
-      logToConsole('Failed to join room: ' + e);
-    });
+
+    // Join room after connected
+    // Wait until connected to call joinRoom
+    const tryJoinRoom = () => {
+      if (photonClient.isConnected()) {
+        photonClient.joinRoom(roomName).catch(e => {
+          lobbyStatus.textContent = 'Failed to join room.';
+          logToConsole('Failed to join room: ' + e);
+        });
+      } else {
+        setTimeout(tryJoinRoom, 200);
+      }
+    };
+    tryJoinRoom();
   });
 </script>
 
